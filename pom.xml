@@ -18,6 +18,7 @@
         <module>algorithmStudy</module>
         <module>java8Study</module>
         <module>commonStudy</module>
+        <module>socketStudy</module>
     </modules>
 
     <dependencies>

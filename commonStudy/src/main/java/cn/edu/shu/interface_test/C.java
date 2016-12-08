@@ -3,7 +3,7 @@ package cn.edu.shu.interface_test;
 /**
  * Created by jxxiangwen on 16-8-22.
  */
-public class C implements A, B {
+public class C implements B {
 
     public Integer integer;
     @Override
