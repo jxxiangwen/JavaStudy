@@ -1,12 +1,18 @@
 package cn.edu.shu.socket;
 
+import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Created by jxxiangwen on 16-11-10.
  */
+class Person{}
+class Student extends Person{}
+class Employee extends Person{}
 public class InetAddressTest {
     float sum_elements(float a[], int length) {
         int i;
@@ -18,7 +24,26 @@ public class InetAddressTest {
         return result;
     }
 
+    private static String test;
+
+    @PostConstruct
+    public void init(){
+        System.out.println("postConstruct");
+        test = "etst";
+    }
+
     public static void main(String[] args) throws UnknownHostException {
+        System.out.println(test);
+//        Person[] per = new Person[2];
+        Person[] per = new Student[2];
+//        per[1] = new Person();
+        int monthInt = 4;
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+        calendar.add(Calendar.MONTH, monthInt);
+        System.out.println(calendar.getTime());
+        StringBuilder stringBuilder = new StringBuilder("sadfasf");
+        System.out.println(stringBuilder.deleteCharAt(stringBuilder.length() -1));
         InetAddress localHost = InetAddress.getLocalHost();
         InetAddress byName = InetAddress.getByName("116.214.11.98");
 

@@ -31,4 +31,8 @@ public class Daffodil {
         return sum == number ? true : false;
     }
 
+    public static void main(String[] args) {
+        System.out.println(new Daffodil().isDaffodil(100));
+    }
+
 }
