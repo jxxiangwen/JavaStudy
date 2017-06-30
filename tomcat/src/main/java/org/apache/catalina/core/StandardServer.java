@@ -700,13 +700,6 @@ public final class StandardServer
     /**
      * Write the configuration information for this entire <code>Server</code>
      * out to the server.xml configuration file.
-     *
-     * @exception InstanceNotFoundException if the managed resource object
-     *  cannot be found
-     * @exception MBeanException if the initializer of the object throws
-     *  an exception, or persistence is not supported
-     * @exception RuntimeOperationsException if an exception is reported
-     *  by the persistence mechanism
      */
     public synchronized void store() throws Exception {
 
