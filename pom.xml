@@ -19,7 +19,7 @@
         <module>java8Study</module>
         <module>commonStudy</module>
         <module>socketStudy</module>
-        <module>tomcat</module>
+        <module>tomcatStudy</module>
     </modules>
 
     <dependencies>

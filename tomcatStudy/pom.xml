@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tomcat</artifactId>
+    <artifactId>tomcatStudy</artifactId>
 
     <dependencies>
         <!--&lt;!&ndash; https://mvnrepository.com/artifact/javax.servlet/servlet-api &ndash;&gt;-->
