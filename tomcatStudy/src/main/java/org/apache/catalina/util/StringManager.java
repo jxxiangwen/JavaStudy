@@ -75,7 +75,7 @@ import java.util.ResourceBundle;
  * <p>The StringManager will look for a ResourceBundle named by
  * the package name given plus the suffix of "LocalStrings". In
  * practice, this means that the localized information will be contained
- * in a LocalStrings.properties file located in the package
+ * in a LocalStrings_en.properties file located in the package
  * directory of the classpath.
  *
  * <p>Please see the documentation for java.util.ResourceBundle for

@@ -2,26 +2,14 @@ package ex03.pyrmont.connector.http;
 
 import ex03.pyrmont.connector.ResponseStream;
 import ex03.pyrmont.connector.ResponseWriter;
-import ex03.pyrmont.connector.http.Constants;
+import org.apache.catalina.util.CookieTools;
 
-import java.io.OutputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.File;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.catalina.util.CookieTools;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class HttpResponse implements HttpServletResponse {
 

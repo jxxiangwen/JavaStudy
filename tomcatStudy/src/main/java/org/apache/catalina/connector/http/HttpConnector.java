@@ -289,7 +289,7 @@ public final class HttpConnector
     /**
      * Set the connection timeout for this Connector.
      *
-     * @param count The new connection timeout
+     * @param connectionTimeout The new connection timeout
      */
     public void setConnectionTimeout(int connectionTimeout) {
 

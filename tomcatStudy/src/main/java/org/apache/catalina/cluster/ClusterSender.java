@@ -113,7 +113,7 @@ public interface ClusterSender {
     /**
      * Set the Logger for this component.
      *
-     * @param debug The Logger to use with this component.
+     * @param logger The Logger to use with this component.
      */
     public void setLogger(Logger logger);
 
