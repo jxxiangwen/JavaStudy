@@ -21,6 +21,7 @@
         <module>socketStudy</module>
         <module>tomcatStudy</module>
         <module>javaSrcStudy</module>
+        <module>zookeeperStudy</module>
     </modules>
 
     <dependencies>
