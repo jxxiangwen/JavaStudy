@@ -120,6 +120,11 @@ import sun.misc.Unsafe;
 public class LockSupport {
     private LockSupport() {} // Cannot be instantiated.
 
+    /**
+     * 私有方法,防止被乱用
+     * @param t
+     * @param arg
+     */
     private static void setBlocker(Thread t, Object arg) {
         // Even though volatile, hotspot doesn't need a write barrier here.
         UNSAFE.putObject(t, parkBlockerOffset, arg);
@@ -127,17 +132,20 @@ public class LockSupport {
 
     /**
      * Makes available the permit for the given thread, if it
-     * was not already available.  If the thread was blocked on
-     * {@code park} then it will unblock.  Otherwise, its next call
-     * to {@code park} is guaranteed not to block. This operation
-     * is not guaranteed to have any effect at all if the given
-     * thread has not been started.
+     * was not already available. If the thread was blocked on
+     * {@code park} then it will unblock. Otherwise, its next call
+     * to {@code park} is guaranteed not to block.(如果线程被阻塞,将会释放,
+     * 否则下一次调用park将保证不会被阻塞) This operation is not guaranteed to
+     * have any effect at all if the given thread has not been started.
+     * (如果线程没有被启动,不保证没有任何影响)
      *
      * @param thread the thread to unpark, or {@code null}, in which case
      *        this operation has no effect
      */
     public static void unpark(Thread thread) {
         if (thread != null)
+            //unpark：当指定线程被park命令阻塞时unpark命令可以恢复阻塞。
+            // 在park命令没有被先调用过的时候，调用unpark，线程仍然不被阻塞。
             UNSAFE.unpark(thread);
     }
 
@@ -148,15 +156,15 @@ public class LockSupport {
      * <p>If the permit is available then it is consumed and the call returns
      * immediately; otherwise
      * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until one of three things happens:
+     * purposes and lies dormant(潜伏的,休眠的) until one of three things happens:
      *
-     * <ul>
+     * <ul>其他线程unpark当前线程
      * <li>Some other thread invokes {@link #unpark unpark} with the
      * current thread as the target; or
-     *
+     * 其他线程interrupt当前线程
      * <li>Some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread; or
-     *
+     * 本次调用伪造返回
      * <li>The call spuriously (that is, for no reason) returns.
      * </ul>
      *
@@ -164,7 +172,7 @@ public class LockSupport {
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
      * for example, the interrupt status of the thread upon return.
-     *
+     * (调用者要首先检查引起本线程park的条件,同时也需要在返回前决定终端状态)
      * @param blocker the synchronization object responsible for this
      *        thread parking
      * @since 1.6
@@ -172,6 +180,14 @@ public class LockSupport {
     public static void park(Object blocker) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
+        //阻塞当前线程:除非
+        // (1)当配对的unpark发生
+        // (2)配对的unpark已经发生或者线程被中断时恢复（unpark先行，再执行park）
+        // (3)当absolute是false时，如果给定的时间是非0（负数）或者给定的时间
+        // （正数, 时间单位时毫秒）已经过去了(0的时候会一直阻塞着)。
+        // (4)当Absolute是true时，如果给定的时间（时间单位是纳秒）
+        // 过去了或者伪造的（在我理解是参数不合法时）线程会恢复中断。
+        // 这个操作是不安全的，所以在其他调用会很奇怪
         UNSAFE.park(false, 0L);
         setBlocker(t, null);
     }
@@ -191,7 +207,7 @@ public class LockSupport {
      *
      * <li>Some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread; or
-     *
+     * 等待时间结束
      * <li>The specified waiting time elapses; or
      *
      * <li>The call spuriously (that is, for no reason) returns.
@@ -232,7 +248,7 @@ public class LockSupport {
      *
      * <li>Some other thread {@linkplain Thread#interrupt interrupts} the
      * current thread; or
-     *
+     * 到达截止时间
      * <li>The specified deadline passes; or
      *
      * <li>The call spuriously (that is, for no reason) returns.
@@ -260,10 +276,12 @@ public class LockSupport {
     /**
      * Returns the blocker object supplied to the most recent
      * invocation of a park method that has not yet unblocked, or null
-     * if not blocked.  The value returned is just a momentary
+     * if not blocked. (未阻塞返回null) The value returned is just a momentary
      * snapshot -- the thread may have since unblocked or blocked on a
      * different blocker object.
-     *
+     * 为什么要用偏移量来获取对象?
+     * 这个parkBlocker就是在线程处于阻塞的情况下才会被赋值。线程都已经阻塞了，
+     * 如果不通过这种内存的方法，而是直接调用线程内的方法，线程是不会回应调用的。
      * @param t the thread
      * @return the blocker
      * @throws NullPointerException if argument is null
@@ -373,7 +391,7 @@ public class LockSupport {
     }
 
     /**
-     * Returns the pseudo-randomly initialized or updated secondary seed.
+     * Returns the pseudo-randomly(伪随机) initialized or updated secondary seed.
      * Copied from ThreadLocalRandom due to package access restrictions.
      */
     static final int nextSecondarySeed() {
