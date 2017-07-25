@@ -20,6 +20,7 @@
         <module>commonStudy</module>
         <module>socketStudy</module>
         <module>tomcatStudy</module>
+        <module>javaSrcStudy</module>
     </modules>
 
     <dependencies>
@@ -62,6 +63,11 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.16.10</version>
         </dependency>
     </dependencies>
 

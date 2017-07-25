@@ -1239,7 +1239,7 @@ System.out.println("after calling setWrapper");
      * container provided servlet class that should be loaded by the
      * server class loader.
      *
-     * @param name Name of the class to be checked
+     * @param classname Name of the class to be checked
      */
     private boolean isContainerProvidedServlet(String classname) {
 

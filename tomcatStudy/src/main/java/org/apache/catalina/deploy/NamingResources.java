@@ -323,7 +323,7 @@ public final class NamingResources {
     /**
      * Add a resource link for this web application.
      *
-     * @param resource New resource link
+     * @param resourceLink New resource link
      */
     public void addResourceLink(ContextResourceLink resourceLink) {
 

@@ -67,6 +67,10 @@ package org.apache.catalina.core;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
+
 import org.apache.catalina.Connector;
 import org.apache.catalina.Container;
 import org.apache.catalina.Engine;
@@ -460,7 +464,7 @@ public final class StandardService
     public void removeLifecycleListener(LifecycleListener listener) {
 
         lifecycle.removeLifecycleListener(listener);
-
+        FutureTask
     }
 
 
