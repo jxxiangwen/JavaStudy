@@ -71,7 +71,8 @@ import sun.misc.Unsafe;
  * does not &quot;understand&quot; these differences except in the
  * mechanical sense that when a shared mode acquire succeeds, the next
  * waiting thread (if one exists) must also determine whether it can
- * acquire as well. Threads waiting in the different modes share the
+ * acquire as well.(一个贡献模式成功后,下一个等待进程需要决定它是否也能获得贡献)
+ * Threads waiting in the different modes share the
  * same FIFO queue. Usually, implementation subclasses support only
  * one of these modes, but both can come into play for example in a
  * {@link ReadWriteLock}. Subclasses that support only exclusive or
@@ -120,7 +121,8 @@ import sun.misc.Unsafe;
  * Each of these methods by default throws {@link
  * UnsupportedOperationException}.  Implementations of these methods
  * must be internally thread-safe, and should in general be short and
- * not block. Defining these methods is the <em>only</em> supported
+ * not block. (实现这些方法需要短并且非阻塞同时线程安全)
+ * Defining these methods is the <em>only</em> supported
  * means of using this class. All other methods are declared
  * {@code final} because they cannot be independently varied.
  *
@@ -146,8 +148,10 @@ import sun.misc.Unsafe;
  *        <em>unblock the first queued thread</em>;
  * </pre>
  *
- * (Shared mode is similar but may involve cascading signals.)
+ * (Shared mode is similar but may involve cascading signals.也就是可能会有很多线程活动)
  *
+ * 这一段讲的是公平锁和非公平锁怎么获得,在入队之前还会检查一次tryAcquire,
+ * 非公平锁可以在hasQueuedPredecessors的情况下获取锁,只要返回true.
  * <p id="barging">Because checks in acquire are invoked before
  * enqueuing, a newly acquiring thread may <em>barge</em> ahead of
  * others that are blocked and queued.  However, you can, if desired,
@@ -159,11 +163,11 @@ import sun.misc.Unsafe;
  * specifically designed to be used by fair synchronizers) returns
  * {@code true}.  Other variations are possible.
  *
- * <p>Throughput and scalability are generally highest for the
+ * <p>Throughput and scalability(生产力和可伸缩性) are generally highest for the
  * default barging (also known as <em>greedy</em>,
- * <em>renouncement</em>, and <em>convoy-avoidance</em>) strategy.
- * While this is not guaranteed to be fair or starvation-free, earlier
- * queued threads are allowed to recontend before later queued
+ * <em>renouncement(否认,拒绝)</em>, and <em>convoy-avoidance</em>) strategy.
+ * While this is not guaranteed to be fair or starvation(饥饿,饿死)-free, earlier
+ * queued threads are allowed to recontend(再次争夺) before later queued
  * threads, and each recontention has an unbiased chance to succeed
  * against incoming threads.  Also, while acquires do not
  * &quot;spin&quot; in the usual sense, they may perform multiple
@@ -378,42 +382,63 @@ public abstract class AbstractQueuedSynchronizer
      * on the design of this class.
      */
     static final class Node {
-        /** Marker to indicate a node is waiting in shared mode */
+        /** Marker to indicate a node is waiting in shared mode
+         * 共享等待节点
+         * */
         static final Node SHARED = new Node();
-        /** Marker to indicate a node is waiting in exclusive mode */
+        /** Marker to indicate a node is waiting in exclusive mode
+         * 独占等待节点
+         * */
         static final Node EXCLUSIVE = null;
 
-        /** waitStatus value to indicate thread has cancelled */
+        /** waitStatus value to indicate thread has cancelled
+         * 代表等待节点已被删除
+         * */
         static final int CANCELLED =  1;
-        /** waitStatus value to indicate successor's thread needs unparking */
+        /** waitStatus value to indicate successor's thread needs unparking
+         * 代表后继节点需要unpark
+         * */
         static final int SIGNAL    = -1;
-        /** waitStatus value to indicate thread is waiting on condition */
+        /** waitStatus value to indicate thread is waiting on condition
+         * 代表节点在等待条件
+         * */
         static final int CONDITION = -2;
         /**
          * waitStatus value to indicate the next acquireShared should
          * unconditionally propagate
+         * 代表下一次acquireShared需要无条件传播
          */
         static final int PROPAGATE = -3;
 
         /**
          * Status field, taking on only the values:
-         *   SIGNAL:     The successor of this node is (or will soon be)
+         *   SIGNAL:     后继节点在阻塞或者将要阻塞,因此当前节点在release和cancel
+         *               的时候需要unpark后继节点,为了避免竞争,acquire方法需要首先
+         *               声明他们需要一个signal,然后再尝试原子的acquire,失败后阻塞.
+         *
+         *               The successor of this node is (or will soon be)
          *               blocked (via park), so the current node must
          *               unpark its successor when it releases or
          *               cancels. To avoid races, acquire methods must
          *               first indicate they need a signal,
          *               then retry the atomic acquire, and then,
          *               on failure, block.
-         *   CANCELLED:  This node is cancelled due to timeout or interrupt.
+         *   CANCELLED:  本节点由于超时或者interrupt而被取消,一个取消的节点不会不会再次阻塞.
+         *
+         *               This node is cancelled due to timeout or interrupt.
          *               Nodes never leave this state. In particular,
          *               a thread with cancelled node never again blocks.
-         *   CONDITION:  This node is currently on a condition queue.
+         *   CONDITION:  本节点在条件队列上,在改变到0之前不会回到同步节点,
+         *
+         *               This node is currently on a condition queue.
          *               It will not be used as a sync queue node
          *               until transferred, at which time the status
          *               will be set to 0. (Use of this value here has
          *               nothing to do with the other uses of the
          *               field, but simplifies mechanics.)
-         *   PROPAGATE:  A releaseShared should be propagated to other
+         *   PROPAGATE:  releaseShared需要被传播给其他节点.
+         *
+         *               A releaseShared should be propagated to other
          *               nodes. This is set (for head node only) in
          *               doReleaseShared to ensure propagation
          *               continues, even if other operations have
@@ -421,9 +446,14 @@ public abstract class AbstractQueuedSynchronizer
          *   0:          None of the above
          *
          * The values are arranged numerically to simplify use.
+         *
+         * 非负节点意味着不需要signal,因此许多节点不需要检查特殊值,仅仅需要检查正负.
+         *
          * Non-negative values mean that a node doesn't need to
          * signal. So, most code doesn't need to check for particular
          * values, just for sign.
+         *
+         * 0->正常同步节点,CONDITION->条件节点.使用CAS修改.
          *
          * The field is initialized to 0 for normal sync nodes, and
          * CONDITION for condition nodes.  It is modified using CAS
@@ -432,6 +462,11 @@ public abstract class AbstractQueuedSynchronizer
         volatile int waitStatus;
 
         /**
+         * 指向检查当前节点状态的前继节点,在入队期间赋值,出队时赋值为null(GC),在前继
+         * 节点cancel之前,需要找一个未被cancel的前继节点,前继节点总是存在的,因为head
+         * 节点不会cancel,成为head意味着成功acquire,cancel节点不会acquire,一个线程
+         * 只能cancel他自己.
+         *
          * Link to predecessor node that current node/thread relies on
          * for checking waitStatus. Assigned during enqueuing, and nulled
          * out (for sake of GC) only upon dequeuing.  Also, upon
@@ -445,6 +480,10 @@ public abstract class AbstractQueuedSynchronizer
         volatile Node prev;
 
         /**
+         * 指向当前节点release之前需要unpark的节点.在入队期间赋值,出队时赋值为null(GC),
+         * enq操作在attach之前不会赋值为,因此本质为null不意味着已经到了队尾.我们可以
+         * 检查prev的next进行double-check.cancel节点的next指向他自己而不是null.
+         *
          * Link to the successor node that the current node/thread
          * unparks upon release. Assigned during enqueuing, adjusted
          * when bypassing cancelled predecessors, and nulled out (for
@@ -460,12 +499,16 @@ public abstract class AbstractQueuedSynchronizer
         volatile Node next;
 
         /**
+         * 入队赋值,出队null
          * The thread that enqueued this node.  Initialized on
          * construction and nulled out after use.
          */
         volatile Thread thread;
 
         /**
+         * 指向下一个等待条件的节点,或者SHARED节点,因为条件节点只在exclusive模式访问.
+         * 只需要一个简单的队列记录等待条件的节点,在下一次re-acquire时进入同步队列.
+         * 因为条节点只能exclusive,我们使用一个特殊的值(SHARED)代表shared模式.
          * Link to next node waiting on condition, or the special
          * value SHARED.  Because condition queues are accessed only
          * when holding in exclusive mode, we just need a simple
@@ -487,7 +530,7 @@ public abstract class AbstractQueuedSynchronizer
         /**
          * Returns previous node, or throws NullPointerException if null.
          * Use when predecessor cannot be null.  The null check could
-         * be elided, but is present to help the VM.
+         * be elided,(null check可以被忽略) but is present to help the VM.
          *
          * @return the predecessor of this node
          */
