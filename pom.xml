@@ -20,9 +20,8 @@
         <module>commonStudy</module>
         <module>socketStudy</module>
         <module>tomcatStudy</module>
-        <module>javaSrcStudy</module>
         <module>zookeeperStudy</module>
-        <module>openJdkStudy</module>
+        <module>java8SrcStudy</module>
     </modules>
 
     <dependencies>
