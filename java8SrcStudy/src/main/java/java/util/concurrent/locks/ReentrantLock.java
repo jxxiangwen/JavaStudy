@@ -130,15 +130,18 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             final Thread current = Thread.currentThread();
             int c = getState();
             if (c == 0) {
+                // 非公平就体现在这里,公平在队列有等待时会加入队列,非公平直接尝试获取
                 if (compareAndSetState(0, acquires)) {
                     setExclusiveOwnerThread(current);
                     return true;
                 }
             }
             else if (current == getExclusiveOwnerThread()) {
+                // 重人次数
                 int nextc = c + acquires;
                 if (nextc < 0) // overflow
                     throw new Error("Maximum lock count exceeded");
+                // 独占线程,不需要cas
                 setState(nextc);
                 return true;
             }
@@ -203,6 +206,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * acquire on failure.
          */
         final void lock() {
+            // 这里也会尝试获取锁,不公平
             if (compareAndSetState(0, 1))
                 setExclusiveOwnerThread(Thread.currentThread());
             else
@@ -254,6 +258,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * This is equivalent to using {@code ReentrantLock(false)}.
      */
     public ReentrantLock() {
+        // 默认非公平锁
         sync = new NonfairSync();
     }
 
@@ -362,6 +367,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *         thread; and {@code false} otherwise
      */
     public boolean tryLock() {
+        // 尝试去修改state
         return sync.nonfairTryAcquire(1);
     }
 

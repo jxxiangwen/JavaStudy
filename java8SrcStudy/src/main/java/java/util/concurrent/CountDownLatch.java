@@ -228,6 +228,7 @@ public class CountDownLatch {
      *         while waiting
      */
     public void await() throws InterruptedException {
+        // 会阻塞到state = 0
         sync.acquireSharedInterruptibly(1);
     }
 
@@ -288,6 +289,7 @@ public class CountDownLatch {
      * <p>If the current count equals zero then nothing happens.
      */
     public void countDown() {
+        // 每次state减少1 ,减少完成await的线程出队激活
         sync.releaseShared(1);
     }
 

@@ -1630,6 +1630,7 @@ public abstract class AbstractQueuedSynchronizer
      * #tryAcquireShared}) then it is guaranteed that the current thread
      * is not the first queued thread.  Used only as a heuristic in
      * ReentrantReadWriteLock.
+     * 如果当前线程在申请共享模式,返回true时保证当前线程不是队列第一个线程
      */
     final boolean apparentlyFirstQueuedIsExclusive() {
         Node h, s;
@@ -2028,6 +2029,7 @@ public abstract class AbstractQueuedSynchronizer
         /**
          * Adds a new waiter to wait queue.
          * 在修改队列节点结构时候并没有使用CAS，这是因为通常使用condition的前提必须是在独占模式的lock下
+         *
          * @return its new wait node
          */
         private Node addConditionWaiter() {
