@@ -73,7 +73,7 @@ import sun.misc.Unsafe;
  * does not &quot;understand&quot; these differences except in the
  * mechanical sense that when a shared mode acquire succeeds, the next
  * waiting thread (if one exists) must also determine whether it can
- * acquire as well.(一个贡献模式成功后,下一个等待进程需要决定它是否也能获得贡献)
+ * acquire as well.(一个共享模式成功后,下一个等待进程需要决定它是否也能获得共享)
  * Threads waiting in the different modes share the
  * same FIFO queue. Usually, implementation subclasses support only
  * one of these modes, but both can come into play for example in a
@@ -737,22 +737,9 @@ public abstract class AbstractQueuedSynchronizer
         // 表示后继结点没有被取消，是一个可以唤醒的结点，于是唤醒后继结点返回；
         // 如果后继结点为空或者被取消了怎么办？
         // 寻找下一个可唤醒的结点，然后唤醒它返回。
-        // 这里并没有从头向尾寻找，而是相反的方向寻找，为什么呢？
-        // 因为在CLH队列中的结点随时有可能被中断，
-        // 被中断的结点的waitStatus设置为CANCEL,而且它会被踢出CLH队列，
-        // 如何个踢出法，就是它的前趋结点的next并不会指向它，而是指向下一个非CANCEL的结点,
-        // 而它自己的next指针指向它自己。
-        // 一旦这种情况发生，如果从头向尾方向寻找继任结点会出现问题，
-        // 因为一个CANCEL结点的next为自己，那么就找不到正确的继任接点。
-        // 有的人又会问了，CANCEL结点的next指针为什么要指向它自己，
-        // 为什么不指向真正的next结点？为什么不为NULL？
-        // 第一个问题的答案是这种被CANCEL的结点最终会被GC回收，
-        // 如果指向next结点，GC无法回收。 对于第二个问题的回答，
-        // JDK中有这么一句话：
-        // The next field of cancelled nodes is set to point to the node itself instead of null,
-        // to make life easier for isOnSyncQueue.
-        // 大至意思是为了使isOnSyncQueue方法更新简单。
-        // 这里为何从尾节点开始寻找呢？因为若正向寻找，当前头节点的后继节点可能出现变为空的情况，
+        // 这里为何从尾节点开始寻找呢？
+        // enq方法设置好tail后从前往后还找不到这个节点,从后往前可以
+        // 因为若正向寻找，当前头节点的后继节点可能出现变为空的情况，
         // 如在setHeadAndPropagate方法执行后会将老的头节点的后继节点置为空，以告诉GC实现回收，
         // 这样的话后继节点找不到，则将无法找到状态不大于0的后续节点，即使该节点是存在的。
         // 而从尾节点倒序寻找将确保能够找到该目标节点(前提是存在)，因为尾节点的设置是线程安全的
@@ -820,7 +807,7 @@ public abstract class AbstractQueuedSynchronizer
                  线程2是通过releaseShared调用,不会设置head,直接会进入
                  线程2调用且成功进入到doReleaseShared方法，此时获取头节点状态为0（新的头节点还未被setHead），
                  既然能进入到这里，总不能释放失败吧？
-                 然后则把头节点由0修改为Node.PROPAGATE,这样我们再注下setHeadAndPropagate方法
+                 然后则把头节点由0修改为Node.PROPAGATE,这样我们再看下setHeadAndPropagate方法
                  if (propagate > 0 || h == null || h.waitStatus < 0) {
                  Node s = node.next;
                  if (s == null || s.isShared())
@@ -878,6 +865,7 @@ public abstract class AbstractQueuedSynchronizer
         if (propagate > 0 || h == null || h.waitStatus < 0 ||
                 (h = head) == null || h.waitStatus < 0) {
             Node s = node.next;
+            // 读写锁isShared这里不会成立,因此读写锁有读锁后申请写锁不会传播
             if (s == null || s.isShared())
                 doReleaseShared();
         }

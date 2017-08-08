@@ -113,12 +113,14 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @param s completed state value
      */
     @SuppressWarnings("unchecked")
+    // 只有执行完成后才会调用
     private V report(int s) throws ExecutionException {
         Object x = outcome;
         if (s == NORMAL)
             return (V)x;
         if (s >= CANCELLED)
             throw new CancellationException();
+        // EXCEPTIONAL 的时候
         throw new ExecutionException((Throwable)x);
     }
 
@@ -149,6 +151,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @throws NullPointerException if the runnable is null
      */
     public FutureTask(Runnable runnable, V result) {
+        // result 如果不是需要一个特殊的返回,此处一般传递null
         this.callable = Executors.callable(runnable, result);
         this.state = NEW;       // ensure visibility of callable
     }
@@ -161,6 +164,11 @@ public class FutureTask<V> implements RunnableFuture<V> {
         return state != NEW;
     }
 
+    /**
+     * 取消或中断执行,取消后通知所有等待结果线程
+     * @param mayInterruptIfRunning 是够能够中断,能中断改为中断,否则改为取消
+     * @return 取消结果
+     */
     public boolean cancel(boolean mayInterruptIfRunning) {
         if (!(state == NEW &&
               UNSAFE.compareAndSwapInt(this, stateOffset, NEW,
@@ -230,6 +238,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
         if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING)) {
             outcome = v;
             UNSAFE.putOrderedInt(this, stateOffset, NORMAL); // final state
+            // 通知等待线程
             finishCompletion();
         }
     }
@@ -261,6 +270,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
             Callable<V> c = callable;
             if (c != null && state == NEW) {
                 V result;
+                // 是否正常结束
                 boolean ran;
                 try {
                     result = c.call();
@@ -294,6 +304,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
      *
      * @return {@code true} if successfully run and reset
      */
+    // 主要为了Scheduled调用,也就是周期性的调用,并且只有失败才设置结果
+    // 其他时候
     protected boolean runAndReset() {
         if (state != NEW ||
             !UNSAFE.compareAndSwapObject(this, runnerOffset,
@@ -351,6 +363,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * stack.  See other classes such as Phaser and SynchronousQueue
      * for more detailed explanation.
      */
+    // 记录等待结果的队列
     static final class WaitNode {
         volatile Thread thread;
         volatile WaitNode next;
@@ -369,6 +382,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                     Thread t = q.thread;
                     if (t != null) {
                         q.thread = null;
+                        // 依次通知所有thread
                         LockSupport.unpark(t);
                     }
                     WaitNode next = q.next;
@@ -389,7 +403,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     /**
      * Awaits completion or aborts on interrupt or timeout.
      *
-     * @param timed true if use timed waits
+     * @param timed true if use timed waits 是否支持超时
      * @param nanos time to wait, if timed
      * @return state upon completion
      */
@@ -406,15 +420,19 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
             int s = state;
             if (s > COMPLETING) {
+                // 已经结束
                 if (q != null)
                     q.thread = null;
                 return s;
             }
             else if (s == COMPLETING) // cannot time out yet
+                // 正在结束,当前线程让出cpu,等待结束
                 Thread.yield();
             else if (q == null)
+                // 第一次循环且未结束
                 q = new WaitNode();
             else if (!queued)
+                // 新的等待线程在队列的前面
                 queued = UNSAFE.compareAndSwapObject(this, waitersOffset,
                                                      q.next = waiters, q);
             else if (timed) {

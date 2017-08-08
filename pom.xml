@@ -22,6 +22,7 @@
         <module>tomcatStudy</module>
         <module>zookeeperStudy</module>
         <module>java8SrcStudy</module>
+        <module>java7SrcStudy</module>
     </modules>
 
     <dependencies>

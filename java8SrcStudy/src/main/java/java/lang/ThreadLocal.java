@@ -72,6 +72,8 @@ import java.util.function.Supplier;
  * @author Josh Bloch and Doug Lea
  * @since 1.2
  */
+// 只有一个Thread中有多个ThreadLocal时,ThreadLocalMap才有多个key,
+// 一个key就是一个ThreadLocal变量,一个线程只存储一个map
 public class ThreadLocal<T> {
     /**
      * ThreadLocals rely on per-thread linear-probe hash maps attached

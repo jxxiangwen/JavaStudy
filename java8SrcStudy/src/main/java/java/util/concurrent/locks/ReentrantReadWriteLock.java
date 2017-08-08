@@ -490,6 +490,7 @@ public class ReentrantReadWriteLock
                     // Releasing the read lock has no effect on readers,
                     // but it may allow waiting writers to proceed if
                     // both read and write locks are now free.
+                    // 读锁全部释放完成
                     return nextc == 0;
             }
         }
