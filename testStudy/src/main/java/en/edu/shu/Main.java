@@ -9,6 +9,7 @@ public class Main {
         System.out.println(1 << 29);
         System.out.println(2 << 29);
         System.out.println(3 << 29);
+        System.out.println(1 + String.valueOf(Character.SPACE_SEPARATOR) + 2);
         System.out.println(Integer.MAX_VALUE);
 //        Scanner cin = new Scanner(System.in);
 //        int begin, end;
