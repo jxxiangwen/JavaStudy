@@ -64,6 +64,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
             arrayFieldOffset = unsafe.objectFieldOffset
                 (AtomicReferenceArray.class.getDeclaredField("array"));
             base = unsafe.arrayBaseOffset(Object[].class);
+            // 获取该类型的数组中应用的大小，占用多少个字节。 其实就是一个Object引用占用空间
             int scale = unsafe.arrayIndexScale(Object[].class);
             if ((scale & (scale - 1)) != 0)
                 throw new Error("data type scale not a power of two");

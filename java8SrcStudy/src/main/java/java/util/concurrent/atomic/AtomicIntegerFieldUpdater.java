@@ -48,7 +48,7 @@ import sun.reflect.Reflection;
 
 /**
  * A reflection-based utility that enables atomic updates to
- * designated {@code volatile int} fields of designated classes.
+ * designated(指定的) {@code volatile int} fields of designated classes.
  * This class is designed for use in atomic data structures in which
  * several fields of the same node are independently subject to atomic
  * updates.
@@ -408,6 +408,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
             if (field.getType() != int.class)
                 throw new IllegalArgumentException("Must be integer type");
 
+            // 只支持volatile int,其他不能保证原子操作
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
 
@@ -431,6 +432,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
          * classloader's delegation chain.
          * Equivalent to the inaccessible: first.isAncestor(second).
          */
+        // second是否是first的祖先
         private static boolean isAncestor(ClassLoader first, ClassLoader second) {
             ClassLoader acl = first;
             do {
@@ -461,6 +463,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
          * Checks that target argument is instance of cclass.  On
          * failure, throws cause.
          */
+        // obj是否是cclass类的对象
         private final void accessCheck(T obj) {
             if (!cclass.isInstance(obj))
                 throwAccessCheckException(obj);

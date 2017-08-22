@@ -1392,6 +1392,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *     is equal to zero.
      * @since 1.5
      */
+    // 返回int在编码比如补码当中从左往右数遇到第一个1时有多少个0
     public static int numberOfLeadingZeros(int i) {
         // HD, Figure 5-6
         if (i == 0)

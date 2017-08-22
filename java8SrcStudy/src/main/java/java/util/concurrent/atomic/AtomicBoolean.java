@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent.atomic;
+
 import sun.misc.Unsafe;
 
 /**
@@ -44,8 +45,8 @@ import sun.misc.Unsafe;
  * updated flags, and cannot be used as a replacement for a
  * {@link java.lang.Boolean}.
  *
- * @since 1.5
  * @author Doug Lea
+ * @since 1.5
  */
 public class AtomicBoolean implements java.io.Serializable {
     private static final long serialVersionUID = 4654671469794556979L;
@@ -56,10 +57,13 @@ public class AtomicBoolean implements java.io.Serializable {
     static {
         try {
             valueOffset = unsafe.objectFieldOffset
-                (AtomicBoolean.class.getDeclaredField("value"));
-        } catch (Exception ex) { throw new Error(ex); }
+                    (AtomicBoolean.class.getDeclaredField("value"));
+        } catch (Exception ex) {
+            throw new Error(ex);
+        }
     }
 
+    // 1=true,0=false
     private volatile int value;
 
     /**
@@ -104,15 +108,16 @@ public class AtomicBoolean implements java.io.Serializable {
     /**
      * Atomically sets the value to the given updated value
      * if the current value {@code ==} the expected value.
-     *
+     * <p>
      * <p><a href="package-summary.html#weakCompareAndSet">May fail
-     * spuriously and does not provide ordering guarantees</a>, so is
+     * spuriously(伪造地) and does not provide ordering guarantees</a>, so is
      * only rarely an appropriate alternative to {@code compareAndSet}.
      *
      * @param expect the expected value
      * @param update the new value
      * @return {@code true} if successful
      */
+    // 目前实现和compareAndSet一样没见来不一定
     public boolean weakCompareAndSet(boolean expect, boolean update) {
         int e = expect ? 1 : 0;
         int u = update ? 1 : 0;
@@ -155,6 +160,7 @@ public class AtomicBoolean implements java.io.Serializable {
 
     /**
      * Returns the String representation of the current value.
+     *
      * @return the String representation of the current value
      */
     public String toString() {

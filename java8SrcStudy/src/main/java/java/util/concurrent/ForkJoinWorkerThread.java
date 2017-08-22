@@ -52,6 +52,7 @@ import java.security.ProtectionDomain;
  * @since 1.7
  * @author Doug Lea
  */
+//ForkJoinPool管理ForkJoinWorkerThread执行ForkJoinTask
 public class ForkJoinWorkerThread extends Thread {
     /*
      * ForkJoinWorkerThreads are managed by ForkJoinPools and perform

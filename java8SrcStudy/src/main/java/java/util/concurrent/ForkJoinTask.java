@@ -247,11 +247,17 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * tags.
      */
 
+    /*
+    status 初始化为0,在完成之前一直是非负值
+     */
     /** The run status of this task */
     volatile int status; // accessed directly by pool and workers
+    // F = 1111
     static final int DONE_MASK   = 0xf0000000;  // mask out non-completion bits
     static final int NORMAL      = 0xf0000000;  // must be negative
+    // C = 1100
     static final int CANCELLED   = 0xc0000000;  // must be < NORMAL
+    // 8 = 1000
     static final int EXCEPTIONAL = 0x80000000;  // must be < CANCELLED
     static final int SIGNAL      = 0x00010000;  // must be >= 1 << 16
     static final int SMASK       = 0x0000ffff;  // short bits for tags
@@ -259,15 +265,18 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     /**
      * Marks completion and wakes up threads waiting to join this
      * task.
-     *
+     * 将任务标志为完成,同时通知join本线程的任务,返回的最终退出的状态
      * @param completion one of NORMAL, CANCELLED, EXCEPTIONAL
      * @return completion status on exit
      */
     private int setCompletion(int completion) {
         for (int s;;) {
+            // 只有结束时才会status < 0
             if ((s = status) < 0)
                 return s;
+            //
             if (U.compareAndSwapInt(this, STATUS, s, s | completion)) {
+                // s 记录的是之前的状态, s >>> 16 !=0 也就是之前有SIGNAL
                 if ((s >>> 16) != 0)
                     synchronized (this) { notifyAll(); }
                 return completion;
@@ -282,8 +291,10 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      *
      * @return status on exit from this method
      */
+    // 调用exec方法,返回完成状态
     final int doExec() {
         int s; boolean completed;
+        // >= 0就没有结束,结束肯定<0
         if ((s = status) >= 0) {
             try {
                 completed = exec();
@@ -458,6 +469,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     final int recordExceptionalCompletion(Throwable ex) {
         int s;
+        // 执行出错时status还没变为负数
         if ((s = status) >= 0) {
             int h = System.identityHashCode(this);
             final ReentrantLock lock = exceptionTableLock;

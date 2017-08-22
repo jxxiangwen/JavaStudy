@@ -180,6 +180,7 @@ public class HashMap<K,V>
      * rehash).  This field is used to make iterators on Collection-views of
      * the HashMap fail-fast.  (See ConcurrentModificationException).
      */
+    // 记录HashMap的结构性改变次数,用于fail-fast
     transient int modCount;
 
     /**

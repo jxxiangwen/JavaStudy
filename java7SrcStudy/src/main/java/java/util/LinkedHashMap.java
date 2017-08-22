@@ -39,7 +39,7 @@ import java.io.*;
  * the invocation.)
  *
  * <p>This implementation spares its clients from the unspecified, generally
- * chaotic ordering provided by {@link HashMap} (and {@link Hashtable}),
+ * chaotic(无序的) ordering provided by {@link HashMap} (and {@link Hashtable}),
  * without incurring the increased cost associated with {@link TreeMap}.  It
  * can be used to produce a copy of a map that has the same order as the
  * original, regardless of the original map's implementation:
@@ -159,7 +159,7 @@ public class LinkedHashMap<K,V>
     /**
      * The iteration ordering method for this linked hash map: <tt>true</tt>
      * for access-order, <tt>false</tt> for insertion-order.
-     *
+     * true:按照访问循序,false按照插入顺序
      * @serial
      */
     private final boolean accessOrder;

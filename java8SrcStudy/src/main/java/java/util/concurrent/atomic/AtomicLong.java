@@ -64,6 +64,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * method works in either case, some constructions should be
      * handled at Java level to avoid locking user-visible locks.
      */
+    // 虚拟机是否支持无锁的进行cas long操作
     static final boolean VM_SUPPORTS_LONG_CAS = VMSupportsCS8();
 
     /**

@@ -145,6 +145,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @param update the new value
      * @return {@code true} if successful
      */
+    // 目前实现个compareAndSet一样,将来不一定
     public final boolean weakCompareAndSet(int expect, int update) {
         return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
     }

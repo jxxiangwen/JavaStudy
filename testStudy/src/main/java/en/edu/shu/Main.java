@@ -1,16 +1,82 @@
 package en.edu.shu;
 
-import java.util.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Main {
-    public static void main(String args[]) {
-        System.out.println(-1 << 29);
-        System.out.println(0 << 29);
-        System.out.println(1 << 29);
-        System.out.println(2 << 29);
-        System.out.println(3 << 29);
-        System.out.println(1 + String.valueOf(Character.SPACE_SEPARATOR) + 2);
-        System.out.println(Integer.MAX_VALUE);
+
+    private static ThreadLocal<Integer> pos = new ThreadLocal<Integer>() {
+        public Integer initialValue() {
+            return 0;
+        }
+    };
+
+    private static ThreadLocal<Integer> neg = new ThreadLocal<Integer>() {
+        public Integer initialValue() {
+            return 0;
+        }
+    };
+
+    public int i;
+
+    public static void main(String args[]) throws Exception {
+        Thread one = new Thread() {
+            public void run() {
+                Integer integer = pos.get();
+                pos.set(integer++);
+//                integer = neg.get();
+//                pos.set(integer--);
+            }
+        };
+        one.start();
+        one.dumpStack();
+        System.out.println(31 - Integer.numberOfLeadingZeros(8));
+        System.out.println(Integer.numberOfLeadingZeros(-1));
+        System.out.println(Integer.numberOfLeadingZeros(-2));
+        System.out.println(Integer.numberOfLeadingZeros(-3));
+        System.out.println(Integer.numberOfLeadingZeros(4));
+        System.out.println(Integer.numberOfLeadingZeros(8));
+        System.out.println(Integer.numberOfLeadingZeros(16));
+        System.out.println((4 & (4 - 1)));
+        System.out.println(0x00010000 >>> 15);
+        List<Integer> list = Collections.singletonList(1);
+        Method method = list.getClass().getMethod("size");
+        System.out.println(list.size());
+        System.out.println(method);
+
+        System.out.println(method.getModifiers());
+        System.out.println(Modifier.isPublic(method.getModifiers()));
+        System.out.println(method.getClass());
+        System.out.println(method.getDeclaringClass());
+        System.out.println(Modifier.isPublic(method.getDeclaringClass().getModifiers()));
+        System.out.println(method.isAccessible());
+
+        if ((!Modifier.isPublic(method.getModifiers()) || !Modifier.isPublic(method.getDeclaringClass().getModifiers())) && !(method.isAccessible())) {
+            System.out.println("Collections set");
+        }
+
+        Field i = Main.class.getField("i");
+        System.out.println(i.isAccessible());
+
+        System.out.println("---------------------------------");
+        List<Integer> list1 = new ArrayList<>();
+        list1.add(1);
+        Method method1 = list1.getClass().getMethod("size");
+        System.out.println(method1);
+        System.out.println(method1.getModifiers());
+        System.out.println(Modifier.isPublic(method1.getModifiers()));
+        System.out.println(method1.getDeclaringClass());
+        System.out.println(Modifier.isPublic(method1.getDeclaringClass().getModifiers()));
+        System.out.println(method1.isAccessible());
+
+        if ((!Modifier.isPublic(method1.getModifiers()) || !Modifier.isPublic(method1.getDeclaringClass().getModifiers())) && !(method1.isAccessible())) {
+            System.out.println("Arraylist set");
+        }
+
 //        Scanner cin = new Scanner(System.in);
 //        int begin, end;
 //        while(cin.hasNextInt())
