@@ -6,6 +6,8 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
 
@@ -22,8 +24,14 @@ public class Main {
     };
 
     public int i;
-
     public static void main(String args[]) throws Exception {
+        System.out.println(128 << 1);
+        Pattern emoji = Pattern.compile(
+                "[\ud83c\udc00-\ud83c\udfff]|[\ud83d\udc00-\ud83d\udfff]|[\u2600-\u27ff]",
+                Pattern.UNICODE_CASE | Pattern.CASE_INSENSITIVE);
+        Matcher matcher = emoji.matcher("\uD83C\uDF4E");
+        System.out.println(matcher.find());
+        System.out.println("--------------------------------------------------");
         Thread one = new Thread() {
             public void run() {
                 Integer integer = pos.get();

@@ -44,7 +44,7 @@ package java.lang.ref;
  * @author   Mark Reinhold
  * @since    1.2
  */
-
+// 无论内存是否充足都会回收弱引用
 public class WeakReference<T> extends Reference<T> {
 
     /**

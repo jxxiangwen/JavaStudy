@@ -881,18 +881,20 @@ public class Thread implements Runnable {
     * 如果线程阻塞在Selector,会设置中断status,并且立即返回,通常还会接受到一个非零数值,
     * 就像Selector#wakeup方法调用一样
     * */
-     /** <p> If this thread is blocked in a {@link java.nio.channels.Selector}
+    /** <p> If this thread is blocked in a {@link java.nio.channels.Selector}
      * then the thread's interrupt status will be set and it will return
      * immediately from the selection operation, possibly with a non-zero
      * value, just as if the selector's {@link
      * java.nio.channels.Selector#wakeup wakeup} method were invoked.
      * <p>
-      */
+     */
 
      /*
      * 其他情况会设置中断status
      * */
-     /** <p> If none of the previous conditions hold then this thread's interrupt
+
+    /**
+     * <p> If none of the previous conditions hold then this thread's interrupt
      * status will be set. </p>
      * <p>
      * <p> Interrupting a thread that is not alive need not have any effect.
@@ -1639,6 +1641,7 @@ public class Thread implements Runnable {
      * override security-sensitive non-final methods.  Returns true if the
      * subclass overrides any of the methods, false otherwise.
      */
+    // 验证子类没有覆盖security-sensitive 非final方法
     private static boolean auditSubclass(final Class<?> subcl) {
         Boolean result = AccessController.doPrivileged(
                 new PrivilegedAction<Boolean>() {
@@ -1728,6 +1731,7 @@ public class Thread implements Runnable {
          * be waiting for other resources from the operating system
          * such as processor.
          */
+        // RUNNABLE只是代表在虚拟机执行,并不代表在操作系统层面执行
         RUNNABLE,
 
         /**
@@ -1737,6 +1741,8 @@ public class Thread implements Runnable {
          * reenter a synchronized block/method after calling
          * {@link Object#wait() Object.wait}.
          */
+        // 线程在等待一个monitor锁,即等待进入synchronized或者调用wait后再次进入synchronized
+        // 都是在等待进入synchronized
         BLOCKED,
 
         /**
@@ -1758,6 +1764,8 @@ public class Thread implements Runnable {
          * that object. A thread that has called <tt>Thread.join()</tt>
          * is waiting for a specified thread to terminate.
          */
+        // 调用了wait(),join()或者LockSupport#park()
+        // 这个状态代表线程在等待其他线程做一个特殊的操作
         WAITING,
 
         /**
@@ -1772,12 +1780,14 @@ public class Thread implements Runnable {
          * <li>{@link LockSupport#parkUntil LockSupport.parkUntil}</li>
          * </ul>
          */
+        // 时间等待,包括上面这些等待
         TIMED_WAITING,
 
         /**
          * Thread state for a terminated thread.
          * The thread has completed execution.
          */
+        // 运行结束
         TERMINATED;
     }
 
@@ -1935,6 +1945,7 @@ public class Thread implements Runnable {
      * Dispatch an uncaught exception to the handler. This method is
      * intended to be called only by the JVM.
      */
+    // 只能由虚拟机调用
     private void dispatchUncaughtException(Throwable e) {
         getUncaughtExceptionHandler().uncaughtException(this, e);
     }
@@ -2016,6 +2027,7 @@ public class Thread implements Runnable {
     /**
      * Probe hash value; nonzero if threadLocalRandomSeed initialized
      */
+    // probe hash值,threadLocalRandomSeed被初始化就会变为非零值
     @sun.misc.Contended("tlr")
     int threadLocalRandomProbe;
 

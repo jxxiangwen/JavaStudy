@@ -518,7 +518,7 @@ public class ReentrantReadWriteLock
              */
             Thread current = Thread.currentThread();
             int c = getState();
-            // 其实存在写锁后判断是否可以申请读锁
+            // 在存在写锁后判断是否可以申请读锁
             if (exclusiveCount(c) != 0 &&
                     //下面成立就可以申请读锁
                     getExclusiveOwnerThread() != current)
