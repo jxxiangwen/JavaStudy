@@ -102,14 +102,21 @@ public class LongAccumulator extends Striped64 implements Serializable {
      */
     public void accumulate(long x) {
         Cell[] as; long b, v, r; int m; Cell a;
+        // cells不为空 || cas base 失败
+        // 此时都需要使用Striped64提供的循环去保证成功
         if ((as = cells) != null ||
+                // 这一步是发现apply后结合x没有变化,也就是function不会导致结果变化
+                // 那么就不需要去做其他事情了,可以直接返回
+                // 有变化就尝试cas base
             (r = function.applyAsLong(b = base, x)) != b && !casBase(b, r)) {
+            // cells != null 或者cas base失败
             boolean uncontended = true;
             if (as == null || (m = as.length - 1) < 0 ||
                 (a = as[getProbe() & m]) == null ||
                 !(uncontended =
                   (r = function.applyAsLong(v = a.value, x)) == v ||
                   a.cas(v, r)))
+                // cas失败调用,同时设置了uncontended为false 即存在竞争
                 longAccumulate(x, function, uncontended);
         }
     }
@@ -123,6 +130,7 @@ public class LongAccumulator extends Striped64 implements Serializable {
      *
      * @return the current value
      */
+    // 统计base和cells中所有值
     public long get() {
         Cell[] as = cells; Cell a;
         long result = base;

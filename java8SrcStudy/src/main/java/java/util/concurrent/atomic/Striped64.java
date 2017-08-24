@@ -251,6 +251,7 @@ abstract class Striped64 extends Number {
      * @param fn             the update function, or null for add (this convention
      *                       avoids the need for an extra field or function in LongAdder).
      * @param wasUncontended false if CAS failed before call
+     *                       在调用函数之前调用了cas,失败设置此值
      */
     final void longAccumulate(long x, LongBinaryOperator fn,
                               boolean wasUncontended) {
@@ -267,7 +268,9 @@ abstract class Striped64 extends Number {
             int n;
             long v;
             if ((as = cells) != null && (n = as.length) > 0) {
+                // cells不为空,有竞争需要在cell上增加了
                 if ((a = as[(n - 1) & h]) == null) {
+                    // 探测出来有一个cell为null可以赋值
                     if (cellsBusy == 0) {       // Try to attach new Cell
                         Cell r = new Cell(x);   // Optimistically create
                         if (cellsBusy == 0 && casCellsBusy()) {
@@ -275,10 +278,12 @@ abstract class Striped64 extends Number {
                             try {               // Recheck under lock
                                 Cell[] rs;
                                 int m, j;
+                                // 其实就是对前面没有设置cellsBusy的条件再次判断
                                 if ((rs = cells) != null &&
                                         (m = rs.length) > 0 &&
                                         rs[j = (m - 1) & h] == null) {
                                     rs[j] = r;
+                                    // created就代表cell赋值成功
                                     created = true;
                                 }
                             } finally {
@@ -289,17 +294,23 @@ abstract class Striped64 extends Number {
                             continue;           // Slot is now non-empty
                         }
                     }
+                    // cellsBusy忙
                     collide = false;
                 } else if (!wasUncontended)       // CAS already known to fail
+                    // 知道有竞争了同时要改变的cell不为null
                     wasUncontended = true;      // Continue after rehash
                 else if (a.cas(v = a.value, ((fn == null) ? v + x :
                         fn.applyAsLong(v, x))))
+                    // 有竞争,同时对一个cell值的cas成功了
                     break;
                 else if (n >= NCPU || cells != as)
+                    // cell超出cpu数量或者cells被扩容了,就不需要走下面的尝试扩容了
                     collide = false;            // At max size or stale
                 else if (!collide)
                     collide = true;
                 else if (cellsBusy == 0 && casCellsBusy()) {
+                    // 走到这里代表赋值cell失败,cas 失败,
+                    // 但是设置cellsBusy成功,要去扩容
                     try {
                         if (cells == as) {      // Expand table unless stale
                             Cell[] rs = new Cell[n << 1];
@@ -313,11 +324,18 @@ abstract class Striped64 extends Number {
                     collide = false;
                     continue;                   // Retry with expanded table
                 }
+                // 走到这里代表赋值cell失败,cas 失败,cellsBusy设置失败,
+                // 就要换一个cell进行尝试
                 h = advanceProbe(h);
             } else if (cellsBusy == 0 && cells == as && casCellsBusy()) {
+                // 由于子类会首先cas base之后才会调用此方法
+                // 策略就是在cells == null时会初始化cells[]
+                // 除非有其他线程在尝试初始化了
+                // 这时就退化到尝试去cas base
                 boolean init = false;
                 try {                           // Initialize table
                     if (cells == as) {
+                        // 在此判断防止在casCellsBusy被切换了cpu,导致其他线程始化了
                         Cell[] rs = new Cell[2];
                         rs[h & 1] = new Cell(x);
                         cells = rs;
@@ -327,9 +345,14 @@ abstract class Striped64 extends Number {
                     cellsBusy = 0;
                 }
                 if (init)
+                    // 初始化成功已经将x赋值给了初始化的其中一个cell
                     break;
             } else if (casBase(v = base, ((fn == null) ? v + x :
                     fn.applyAsLong(v, x))))
+                // 要么cellsBusy == 1 有其他线程去初始化了cells[]
+                // 或者cells被改变了不等于as
+                // 或者cellsBusy失败
+                // 此时回退到尝试base
                 break;                          // Fall back on using base
         }
     }
@@ -342,6 +365,7 @@ abstract class Striped64 extends Number {
      */
     final void doubleAccumulate(double x, DoubleBinaryOperator fn,
                                 boolean wasUncontended) {
+        // double和long的不同就是会使用Double.doubleToRawLongBits(x)将double转为long存储
         int h;
         if ((h = getProbe()) == 0) {
             ThreadLocalRandom.current(); // force initialization
@@ -382,6 +406,7 @@ abstract class Striped64 extends Number {
                     wasUncontended = true;      // Continue after rehash
                 else if (a.cas(v = a.value,
                         ((fn == null) ?
+                                // long bit转为double计算再转回long存储
                                 Double.doubleToRawLongBits
                                         (Double.longBitsToDouble(v) + x) :
                                 Double.doubleToRawLongBits
