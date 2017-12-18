@@ -937,7 +937,7 @@ public class Thread implements Runnable {
      * @see #isInterrupted()
      */
     /*
-    * 清楚中断status,返回是否被中断
+    * 清除中断status,返回是否被中断
     * */
     public static boolean interrupted() {
         return currentThread().isInterrupted(true);
@@ -1026,7 +1026,7 @@ public class Thread implements Runnable {
      * are Thread.stop, Thread.suspend and Thread.resume Deprecated?</a>.
      */
     /*
-    * 一个suspend需要一个resume对应,同时调用suspend不会释放说资源,
+    * 一个suspend需要一个resume对应,同时调用suspend不会释放锁资源,
     * 可能会造成死锁
     * */
     @Deprecated

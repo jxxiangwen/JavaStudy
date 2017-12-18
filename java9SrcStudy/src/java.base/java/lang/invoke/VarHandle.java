@@ -439,7 +439,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * @since 9
  */
 public abstract class VarHandle {
-    final VarForm vform;
+    final java.lang.invoke.VarForm vform;
 
     VarHandle(VarForm vform) {
         this.vform = vform;

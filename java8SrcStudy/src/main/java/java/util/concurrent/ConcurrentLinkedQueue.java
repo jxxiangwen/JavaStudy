@@ -332,6 +332,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
             if (q == null) {
                 // p is last node
                 if (p.casNext(null, newNode)) {
+                    // 主要更新成功next就可以了,即使tail失败了,
+                    // 最后一个成功修改next的线程也会修改成功tail
+                    // 而最后一个就是最终的tail
                     // Successful CAS is the linearization point
                     // for e to become an element of this queue,
                     // and for newNode to become "live".

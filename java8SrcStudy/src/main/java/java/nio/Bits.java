@@ -642,6 +642,7 @@ class Bits {                            // package-private
     static void reserveMemory(long size, int cap) {
 
         if (!memoryLimitSet && VM.isBooted()) {
+            // 虚拟机参数设置的最大内存
             maxMemory = VM.maxDirectMemory();
             memoryLimitSet = true;
         }
@@ -662,7 +663,15 @@ class Bits {                            // package-private
             }
         }
 
+        // gc回收一些内存,可以回收DirectByteBuffer内存
         // trigger VM's Reference processing
+        //。DirectByteBuffer对象在创建的时候关联了一个PhantomReference，
+        // 说到PhantomReference它其实主要是用来跟踪对象何时被回收的，
+        // 它不能影响gc决策，但是gc过程中如果发现某个对象除了只有PhantomReference引用它之外，
+        // 并没有其他的地方引用它了，那将会把这个引用放到java.lang.ref.Reference.pending队列里，
+        // 在gc完毕的时候通知ReferenceHandler这个守护线程去执行一些后置处理，
+        // 而DirectByteBuffer关联的PhantomReference是PhantomReference的一个子类，
+        // 在最终的处理里会通过Unsafe的free接口来释放DirectByteBuffer对应的堆外内存块
         System.gc();
 
         // a retry loop with exponential back-off delays
@@ -689,6 +698,7 @@ class Bits {                            // package-private
                 }
             }
 
+            // 内存还是不够,异常
             // no luck
             throw new OutOfMemoryError("Direct buffer memory");
 
@@ -706,6 +716,7 @@ class Bits {                            // package-private
         // actual memory usage, which will differ when buffers are page
         // aligned.
         long totalCap;
+        // 是否还有空间,有cas获取
         while (cap <= maxMemory - (totalCap = totalCapacity.get())) {
             if (totalCapacity.compareAndSet(totalCap, totalCap + cap)) {
                 reservedMemory.addAndGet(size);

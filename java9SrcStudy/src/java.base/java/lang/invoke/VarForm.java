@@ -44,7 +44,7 @@ final class VarForm {
     final @Stable MemberName[] memberName_table;
 
     VarForm(Class<?> implClass, Class<?> receiver, Class<?> value, Class<?>... intermediate) {
-        this.methodType_table = new MethodType[VarHandle.AccessType.values().length];
+        this.methodType_table = new MethodType[java.lang.invoke.VarHandle.AccessType.values().length];
 
         // TODO lazily calculate
         this.memberName_table = linkFromStatic(implClass);
@@ -57,25 +57,25 @@ final class VarForm {
             l.add(c);
 
         // (Receiver, <Intermediates>)Value
-        methodType_table[VarHandle.AccessType.GET.ordinal()] =
+        methodType_table[java.lang.invoke.VarHandle.AccessType.GET.ordinal()] =
                 MethodType.methodType(value, l).erase();
 
         // (Receiver, <Intermediates>, Value)void
         l.add(value);
-        methodType_table[VarHandle.AccessType.SET.ordinal()] =
+        methodType_table[java.lang.invoke.VarHandle.AccessType.SET.ordinal()] =
                 MethodType.methodType(void.class, l).erase();
 
         // (Receiver, <Intermediates>, Value)Value
-        methodType_table[VarHandle.AccessType.GET_AND_UPDATE.ordinal()] =
+        methodType_table[java.lang.invoke.VarHandle.AccessType.GET_AND_UPDATE.ordinal()] =
                 MethodType.methodType(value, l).erase();
 
         // (Receiver, <Intermediates>, Value, Value)boolean
         l.add(value);
-        methodType_table[VarHandle.AccessType.COMPARE_AND_SWAP.ordinal()] =
+        methodType_table[java.lang.invoke.VarHandle.AccessType.COMPARE_AND_SWAP.ordinal()] =
                 MethodType.methodType(boolean.class, l).erase();
 
         // (Receiver, <Intermediates>, Value, Value)Value
-        methodType_table[VarHandle.AccessType.COMPARE_AND_EXCHANGE.ordinal()] =
+        methodType_table[java.lang.invoke.VarHandle.AccessType.COMPARE_AND_EXCHANGE.ordinal()] =
                 MethodType.methodType(value, l).erase();
     }
 
@@ -100,7 +100,7 @@ final class VarForm {
 
     @ForceInline
     final MethodType[] getMethodType_V_init() {
-        MethodType[] table = new MethodType[VarHandle.AccessType.values().length];
+        MethodType[] table = new MethodType[java.lang.invoke.VarHandle.AccessType.values().length];
         for (int i = 0; i < methodType_table.length; i++) {
             MethodType mt = methodType_table[i];
             // TODO only adjust for sig-poly methods returning Object
@@ -126,7 +126,7 @@ final class VarForm {
     private static MemberName[] linkFromStatic(Class<?> implClass) {
         MemberName[] table = new MemberName[AccessMode.values().length];
 
-        for (Class<?> c = implClass; c != VarHandle.class; c = c.getSuperclass()) {
+        for (Class<?> c = implClass; c != java.lang.invoke.VarHandle.class; c = c.getSuperclass()) {
             for (Method m : c.getDeclaredMethods()) {
                 if (Modifier.isStatic(m.getModifiers())) {
                     AccessMode am = AccessMode.methodNameToAccessMode.get(m.getName());

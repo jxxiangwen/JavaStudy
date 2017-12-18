@@ -30,6 +30,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
+ * stream 的核心实现
  * Abstract base class for "pipeline" classes, which are the core
  * implementations of the Stream interface and its primitive specializations.
  * Manages construction and evaluation of stream pipelines.

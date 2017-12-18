@@ -117,7 +117,11 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
             super(task, null);
             this.task = task;
         }
-        // FutureTask执行完成set结果或者cancel会调用done()
+
+        /**
+         * FutureTask执行完成set结果或者cancel会调用done()
+         * 这样completionQueue就会记录下完成的任务
+         */
         protected void done() { completionQueue.add(task); }
         private final Future<V> task;
     }

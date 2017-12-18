@@ -159,6 +159,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
         try {
             // Record exceptions so that if we fail to obtain any
             // result, we can throw the last exception we got.
+            // 记录异常，如果没有一个获取结果就抛出最后一个异常
             ExecutionException ee = null;
             final long deadline = timed ? System.nanoTime() + nanos : 0L;
             Iterator<? extends Callable<T>> it = tasks.iterator();
@@ -169,27 +170,38 @@ public abstract class AbstractExecutorService implements ExecutorService {
             int active = 1;
 
             for (;;) {
+                // ecs有执行完成的会放入执行完成队列
                 Future<T> f = ecs.poll();
+                // 没有一个完成的
                 if (f == null) {
                     if (ntasks > 0) {
+                        // 再放入一个任务
                         --ntasks;
                         futures.add(ecs.submit(it.next()));
                         ++active;
                     }
                     else if (active == 0)
+                        // 每次future.get方法失败导致没有返回会active--
+                        // 任务全部添加完成，同时全部get失败才会进入
                         break;
                     else if (timed) {
+                        // 只有任务全部添加完毕，同时future.get()没有全部失败才会检查超时
                         f = ecs.poll(nanos, TimeUnit.NANOSECONDS);
                         if (f == null)
                             throw new TimeoutException();
                         nanos = deadline - System.nanoTime();
                     }
                     else
+                        // 等待直到获取到一个future，进入下面的if
                         f = ecs.take();
                 }
+                // 有完成的
                 if (f != null) {
                     --active;
                     try {
+                        // 取结果，如果取结果失败，也会再次进行循环
+                        // 因为只要有一个成功就可以返回成功，所以一个失败并不影响全部
+                        // 失败会记录下最后一次失败的异常，最后抛出
                         return f.get();
                     } catch (ExecutionException eex) {
                         ee = eex;
@@ -199,11 +211,13 @@ public abstract class AbstractExecutorService implements ExecutorService {
                 }
             }
 
+            // 异常不是ExecutionException 或者RuntimeException，会包装陈ExecutionException
             if (ee == null)
                 ee = new ExecutionException();
             throw ee;
 
         } finally {
+            // 取消所有任务
             for (int i = 0, size = futures.size(); i < size; i++)
                 futures.get(i).cancel(true);
         }
@@ -232,11 +246,13 @@ public abstract class AbstractExecutorService implements ExecutorService {
         ArrayList<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
         boolean done = false;
         try {
+            // 全部开始执行
             for (Callable<T> t : tasks) {
                 RunnableFuture<T> f = newTaskFor(t);
                 futures.add(f);
                 execute(f);
             }
+            // 下面的循环表明invokeAll会等待全部执行完成才会返回
             for (int i = 0, size = futures.size(); i < size; i++) {
                 Future<T> f = futures.get(i);
                 if (!f.isDone()) {
@@ -273,6 +289,8 @@ public abstract class AbstractExecutorService implements ExecutorService {
 
             // Interleave time checks and calls to execute in case
             // executor doesn't have any/much parallelism.
+            // 下面所有逻辑表明只有到了超时时间就返回futures，
+            // 不管有没有提交还是提交了未执行完成
             for (int i = 0; i < size; i++) {
                 execute((Runnable)futures.get(i));
                 nanos = deadline - System.nanoTime();

@@ -7,6 +7,8 @@ import java.util.*;
  */
 public class Main {
     public static void main(String[] args) {
+        System.out.println(8192>>1);
+        System.out.println(8192>>>2);
         Scanner sc = new Scanner(System.in);
         while (sc.hasNext()) {
             int n = sc.nextInt();

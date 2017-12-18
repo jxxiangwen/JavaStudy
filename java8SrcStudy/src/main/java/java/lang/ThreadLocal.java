@@ -72,8 +72,10 @@ import java.util.function.Supplier;
  * @author Josh Bloch and Doug Lea
  * @since 1.2
  */
-// 只有一个Thread中有多个ThreadLocal时,ThreadLocalMap才有多个key,
-// 一个key就是一个ThreadLocal变量,一个线程只存储一个map
+// 每个Thread里面会保存各自的ThreadLocalMap,以ThreadLocal为key
+// 也就是一个ThreadLocal可以作为多个Thread中Map的key
+// 同时Map的Entry使用WeakReference保存ThreadLocal
+// 由于Thread访问的是自己的私有Map,因此完全不需要同步
 public class ThreadLocal<T> {
     /**
      * ThreadLocals rely on per-thread linear-probe hash maps attached
@@ -126,6 +128,7 @@ public class ThreadLocal<T> {
      *
      * @return the initial value for this thread-local
      */
+    // 未初始化时每个线程在get的时候执行一次
     protected T initialValue() {
         return null;
     }
@@ -162,6 +165,7 @@ public class ThreadLocal<T> {
      */
     public T get() {
         Thread t = Thread.currentThread();
+        // Thread中保存的Map
         ThreadLocalMap map = getMap(t);
         if (map != null) {
             ThreadLocalMap.Entry e = map.getEntry(this);
@@ -233,6 +237,7 @@ public class ThreadLocal<T> {
      * @param t the current thread
      * @return the map
      */
+    // 返回的是Thread里面存储的threadLocals
     ThreadLocalMap getMap(Thread t) {
         return t.threadLocals;
     }
@@ -448,6 +453,7 @@ public class ThreadLocal<T> {
                 if (k == null)
                     expungeStaleEntry(i);
                 else
+                    // 开放定址法获取下一个index
                     i = nextIndex(i, len);
                 e = tab[i];
             }

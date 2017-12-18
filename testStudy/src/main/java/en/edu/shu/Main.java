@@ -1,15 +1,76 @@
 package en.edu.shu;
 
+import org.apache.tools.ant.types.resources.Archives;
+
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.net.URI;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Main {
+
+    public static class Father {
+
+    }
+
+    public static class Son extends Father {
+
+    }
+
+    public static class MyList<E> extends ArrayList<E> {
+
+        // toArray() 的同名方法
+        public String[] toArray() {
+            return new String[]{"1", "2", "3"};
+        }
+
+    }
+
+    static <T extends Number> T getObject() {
+        return (T)Long.valueOf(1L);
+    }
+
+
+    public void get() throws Exception{
+        ProtectionDomain protectionDomain = getClass().getProtectionDomain();
+        CodeSource codeSource = protectionDomain.getCodeSource();
+        URI location = (codeSource == null ? null : codeSource.getLocation().toURI());
+        String path = (location == null ? null : location.getSchemeSpecificPart());
+        if (path == null) {
+            throw new IllegalStateException("Unable to determine code source archive");
+        }
+        File root = new File(path);
+        if (!root.exists()) {
+            throw new IllegalStateException(
+                    "Unable to determine code source archive from " + root);
+        }
+
+    }
+
+    public class TestPool implements Runnable{
+        @Override
+        public void run() {
+            while (true){
+
+            }
+        }
+    }
+
+    public static void main(String... args) throws Exception {
+        Properties properties = System.getProperties();
+        Iterator<Map.Entry<Object, Object>> iterator = properties.entrySet().iterator();
+        while (iterator.hasNext()){
+            Map.Entry<Object, Object> next = iterator.next();
+            System.out.println(next.getKey() + ":" + next.getValue());
+        }
+        PushExecutor.getInstance().execute(new Thread());
+    }
 
     private static ThreadLocal<Integer> pos = new ThreadLocal<Integer>() {
         public Integer initialValue() {
@@ -23,84 +84,28 @@ public class Main {
         }
     };
 
-    public int i;
-    public static void main(String args[]) throws Exception {
-        System.out.println(128 << 1);
-        Pattern emoji = Pattern.compile(
-                "[\ud83c\udc00-\ud83c\udfff]|[\ud83d\udc00-\ud83d\udfff]|[\u2600-\u27ff]",
-                Pattern.UNICODE_CASE | Pattern.CASE_INSENSITIVE);
-        Matcher matcher = emoji.matcher("\uD83C\uDF4E");
-        System.out.println(matcher.find());
-        System.out.println("--------------------------------------------------");
-        Thread one = new Thread() {
-            public void run() {
-                Integer integer = pos.get();
-                pos.set(integer++);
-//                integer = neg.get();
-//                pos.set(integer--);
-            }
-        };
-        one.start();
-        one.dumpStack();
-        System.out.println(31 - Integer.numberOfLeadingZeros(8));
-        System.out.println(Integer.numberOfLeadingZeros(-1));
-        System.out.println(Integer.numberOfLeadingZeros(-2));
-        System.out.println(Integer.numberOfLeadingZeros(-3));
-        System.out.println(Integer.numberOfLeadingZeros(4));
-        System.out.println(Integer.numberOfLeadingZeros(8));
-        System.out.println(Integer.numberOfLeadingZeros(16));
-        System.out.println((4 & (4 - 1)));
-        System.out.println(0x00010000 >>> 15);
-        List<Integer> list = Collections.singletonList(1);
-        Method method = list.getClass().getMethod("size");
-        System.out.println(list.size());
-        System.out.println(method);
-
-        System.out.println(method.getModifiers());
-        System.out.println(Modifier.isPublic(method.getModifiers()));
-        System.out.println(method.getClass());
-        System.out.println(method.getDeclaringClass());
-        System.out.println(Modifier.isPublic(method.getDeclaringClass().getModifiers()));
-        System.out.println(method.isAccessible());
-
-        if ((!Modifier.isPublic(method.getModifiers()) || !Modifier.isPublic(method.getDeclaringClass().getModifiers())) && !(method.isAccessible())) {
-            System.out.println("Collections set");
-        }
-
-        Field i = Main.class.getField("i");
-        System.out.println(i.isAccessible());
-
-        System.out.println("---------------------------------");
-        List<Integer> list1 = new ArrayList<>();
-        list1.add(1);
-        Method method1 = list1.getClass().getMethod("size");
-        System.out.println(method1);
-        System.out.println(method1.getModifiers());
-        System.out.println(Modifier.isPublic(method1.getModifiers()));
-        System.out.println(method1.getDeclaringClass());
-        System.out.println(Modifier.isPublic(method1.getDeclaringClass().getModifiers()));
-        System.out.println(method1.isAccessible());
-
-        if ((!Modifier.isPublic(method1.getModifiers()) || !Modifier.isPublic(method1.getDeclaringClass().getModifiers())) && !(method1.isAccessible())) {
-            System.out.println("Arraylist set");
-        }
-
-//        Scanner cin = new Scanner(System.in);
-//        int begin, end;
-//        while(cin.hasNextInt())
-//        {
-//            begin = cin.nextInt();
-//            end = cin.nextInt();
-//            List<Integer> list = Main.getFlower(begin,end);
-//            if(list.size() == 0){
-//                System.out.println("no");
-//            }else{
-//                for(int i = 0; i < list.size();i++){
-//                    System.out.println(list.get(i));
-//                }
-//            }
-//        }
-    }
+//    public static void main(String args[]) throws Exception {
+//        System.out.println(System.currentTimeMillis() / 86400000);
+//        String day = Long.toHexString(System.currentTimeMillis() / 86400000);
+//        System.out.println(day);
+//        Son[] sons = new Son[]{new Son(), new Son()};
+//        System.out.println(sons.getClass());            // class [Lcom.johnnie.test.Test$Son;
+//
+//        Father[] fathers = sons;
+//        System.out.println(fathers.getClass());     // class [Lcom.johnnie.test.Test$Son;
+//
+////        fathers[0] = new Father();                          // java.lang.ArrayStoreException
+//        List<String> ss = new LinkedList<String>();             // LinkedList toArray() 返回的本身就是 Object[]
+//        ss.add("123");
+//        Object[] objs = ss.toArray();
+//        objs[0] = new Object();
+//
+//        // 此处说明了：c.toArray might (incorrectly) not return Object[] (see 6260652)
+//        ss = new MyList<String>();
+//        objs = ss.toArray();
+//        System.out.println(objs.getClass());        // class [Ljava.lang.String;
+//        objs[0] = new Object();                         // java.lang.ArrayStoreException: java.lang.Object
+//    }
 
     public static List<Integer> getFlower(int begin, int end) {
         List<Integer> list = new ArrayList<Integer>();

@@ -214,6 +214,7 @@ public abstract class ClassLoader {
                     // Note: given current classloading sequence, if
                     // the immediate super class is parallel capable,
                     // all the super classes higher up must be too.
+                    //只有当所有父类都是并行才可并行
                     loaderTypes.add(c);
                     return true;
                 } else {
@@ -237,6 +238,7 @@ public abstract class ClassLoader {
     // class loader is parallel capable.
     // Note: VM also uses this field to decide if the current class loader
     // is parallel capable and the appropriate lock object for class loading.
+    // 在ClassLoader加载类的时候的锁
     private final ConcurrentHashMap<String, Object> parallelLockMap;
 
     // Hashtable that maps packages to certs
@@ -278,7 +280,10 @@ public abstract class ClassLoader {
 
     private ClassLoader(Void unused, ClassLoader parent) {
         this.parent = parent;
+        // 是否具有并行能力
         if (ParallelLoaders.isRegistered(this.getClass())) {
+            // 如果registerAsParallelCapable注册了，那么ClassLoader中的
+            // 一些属性的数据结构都会变成并发数据结构，而相反如果没有注册，很多属性都为null；
             parallelLockMap = new ConcurrentHashMap<>();
             package2certs = new ConcurrentHashMap<>();
             domains =
@@ -403,13 +408,16 @@ public abstract class ClassLoader {
     {
         synchronized (getClassLoadingLock(name)) {
             // First, check if the class has already been loaded
+            // 首先，检测是否已经加载
             Class<?> c = findLoadedClass(name);
             if (c == null) {
                 long t0 = System.nanoTime();
                 try {
+                    // 父加载器不为空则调用父加载器的loadClass
                     if (parent != null) {
                         c = parent.loadClass(name, false);
                     } else {
+                        // 父加载器为空则调用Bootstrap Classloader
                         c = findBootstrapClassOrNull(name);
                     }
                 } catch (ClassNotFoundException e) {
@@ -421,6 +429,7 @@ public abstract class ClassLoader {
                     // If still not found, then invoke findClass in order
                     // to find the class.
                     long t1 = System.nanoTime();
+                    // 父加载器没有找到，则调用findclass
                     c = findClass(name);
 
                     // this is the defining class loader; record the stats
@@ -429,6 +438,7 @@ public abstract class ClassLoader {
                     sun.misc.PerfCounter.getFindClasses().increment();
                 }
             }
+            // 调用resolveClass()
             if (resolve) {
                 resolveClass(c);
             }
@@ -456,6 +466,11 @@ public abstract class ClassLoader {
      *
      * @since  1.7
      */
+    // loadClass的class名字相同的时候，getClassloadingLock返回的lock是还是原来的lock对象，
+    // 这就意味着锁的级别已经降到了loadClass的class名字相同的类，才会出现资源争抢和同步情况；
+    // 而当loadClass的class名字不同的时候，getClassloadingLock返回的lock是一个newLock，
+    // 相当于你给loadClass方法加了不同的lock锁，这相当于是两个lock了，所以不同class的加载，
+    // 不会出现资源争抢和同步的情况；
     protected Object getClassLoadingLock(String className) {
         Object lock = this;
         if (parallelLockMap != null) {
@@ -1198,8 +1213,12 @@ public abstract class ClassLoader {
      *
      * @since   1.7
      */
+    // registerAsParallelCapable方法，是将当前的classLoader注册到一个并行的
+    // ParallelLoaders的loaderTypes的Set中，该集合中的classLoader全部具有
+    // 并发执行的能力。
     @CallerSensitive
     protected static boolean registerAsParallelCapable() {
+        // 反射拿到当前classLoader
         Class<? extends ClassLoader> callerClass =
             Reflection.getCallerClass().asSubclass(ClassLoader.class);
         return ParallelLoaders.register(callerClass);
