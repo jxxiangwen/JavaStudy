@@ -24,6 +24,7 @@
         <module>java8SrcStudy</module>
         <module>java7SrcStudy</module>
         <module>springCloud</module>
+        <module>IoStudy</module>
     </modules>
 
     <dependencies>
