@@ -20,7 +20,7 @@ import java.nio.channels.CompletionHandler;
  * 对是一个对象引用（但这没关系，因为您不会直接操作这个AsynchronousChannelProvider对象）。
  *
  * @author jxxiangwen
- * mail: :xiangwen.zou@ymm56.com
+ * mail: :jxxiangwen@live.com
  * Time: 18-1-6 下午9:59.
  */
 public class ServerReadCompletionHandler implements CompletionHandler<Integer, ByteBuffer> {

@@ -8,7 +8,7 @@ import java.util.concurrent.*;
 
 /**
  * @author jxxiangwen
- * mail: :xiangwen.zou@ymm56.com
+ * mail: :jxxiangwen@live.com
  * Time: 18-1-5 上午8:47.
  */
 public class ThreadSocketSender {

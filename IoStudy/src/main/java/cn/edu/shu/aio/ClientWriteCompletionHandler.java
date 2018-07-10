@@ -8,7 +8,7 @@ import java.nio.channels.CompletionHandler;
 
 /**
  * @author jxxiangwen
- * mail: :xiangwen.zou@ymm56.com
+ * mail: :jxxiangwen@live.com
  * Time: 18-1-6 下午9:59.
  */
 public class ClientWriteCompletionHandler implements CompletionHandler<Void, ByteBuffer> {

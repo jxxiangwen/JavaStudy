@@ -10,7 +10,7 @@ import java.util.concurrent.CountDownLatch;
 
 /**
  * @author jxxiangwen
- * mail: :xiangwen.zou@ymm56.com
+ * mail: :jxxiangwen@live.com
  * Time: 18-1-5 上午11:18.
  */
 public class AsyncServerSocketChannelAccepter {
