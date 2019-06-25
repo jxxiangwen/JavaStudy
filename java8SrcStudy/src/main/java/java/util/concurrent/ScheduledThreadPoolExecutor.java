@@ -290,8 +290,10 @@ public class ScheduledThreadPoolExecutor
             if (!canRunInCurrentRunState(periodic))
                 cancel(false);
             else if (!periodic)
+                // 非周期任务，直接执行
                 ScheduledFutureTask.super.run();
             else if (ScheduledFutureTask.super.runAndReset()) {
+                // 周期任务，执行完成后计算下一次执行时间，再放入线程池
                 setNextRunTime();
                 reExecutePeriodic(outerTask);
             }
@@ -833,6 +835,7 @@ public class ScheduledThreadPoolExecutor
          */
 
         private static final int INITIAL_CAPACITY = 16;
+        // 小根堆
         private RunnableScheduledFuture<?>[] queue =
             new RunnableScheduledFuture<?>[INITIAL_CAPACITY];
         private final ReentrantLock lock = new ReentrantLock();
@@ -1017,6 +1020,7 @@ public class ScheduledThreadPoolExecutor
                     queue[0] = e;
                     setIndex(e, 0);
                 } else {
+                    // 构建小根堆
                     siftUp(i, e);
                 }
                 if (queue[0] == e) {
@@ -1081,6 +1085,7 @@ public class ScheduledThreadPoolExecutor
                         available.await();
                     else {
                         long delay = first.getDelay(NANOSECONDS);
+                        // 到时间了，需要被取出
                         if (delay <= 0)
                             return finishPoll(first);
                         first = null; // don't retain ref while waiting
@@ -1090,6 +1095,7 @@ public class ScheduledThreadPoolExecutor
                             Thread thisThread = Thread.currentThread();
                             leader = thisThread;
                             try {
+                                // 存在leader只有一个任务会awaitNanos，其他都是await
                                 available.awaitNanos(delay);
                             } finally {
                                 if (leader == thisThread)

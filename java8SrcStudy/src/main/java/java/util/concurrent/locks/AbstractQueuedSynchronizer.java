@@ -884,7 +884,7 @@ public abstract class AbstractQueuedSynchronizer
             return;
 
         node.thread = null;
-
+        // 跳过cancel节点
         // Skip cancelled predecessors
         Node pred = node.prev;
         while (pred.waitStatus > 0)
@@ -906,7 +906,7 @@ public abstract class AbstractQueuedSynchronizer
         } else {
             // If successor needs signal, try to set pred's next-link
             // so it will get one. Otherwise wake it up to propagate.
-            // 如果后继需要SIGNAL,将上一个非cancel结点status设为SIGNAL,
+            // 如果后继需要SIGNAL,将前一个非cancel结点status设为SIGNAL,
             // 同时将其next指向当前节点的next结点
             int ws;
             if (pred != head &&
@@ -1009,7 +1009,7 @@ public abstract class AbstractQueuedSynchronizer
         try {
             boolean interrupted = false;
             for (; ; ) {
-                //这里就可能抛出Null异常
+                //这里就可能抛出Null异常, 不应该出现，因为head的存在
                 final Node p = node.predecessor();
                 // 为什么要tryAcquire?前继结点是head,证明已经到了队列头部
                 // for循环会使进入方法的线程一直阻塞,直到下面的if成立

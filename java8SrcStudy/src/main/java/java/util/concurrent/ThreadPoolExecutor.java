@@ -815,7 +815,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * Set containing all worker threads in pool. Accessed only when
      * holding mainLock.
      */
-    // 只有持有mainLock才能范围workers
+    // 只有持有mainLock才能访问workers
     private final HashSet<Worker> workers = new HashSet<Worker>();
 
     /**
@@ -827,7 +827,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * Tracks largest attained pool size. Accessed only under
      * mainLock.
      */
-    // 只有持有mainLock才能范围
+    // 只有持有mainLock才能修改
     private int largestPoolSize;
 
     /**
@@ -1165,6 +1165,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         try {
             for (Worker w : workers) {
                 Thread t = w.thread;
+                // 只有worker空闲的时候才能tryLock成功
                 if (!t.isInterrupted() && w.tryLock()) {
                     try {
                         t.interrupt();
@@ -1335,7 +1336,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     int rs = runStateOf(ctl.get());
 
                     if (rs < SHUTDOWN ||
-                            // SHUTDOWN的是否可以增加null任务
+                            // SHUTDOWN的时候可以增加firstTask为null的Worker，可以消费queue中的任务
                             (rs == SHUTDOWN && firstTask == null)) {
                         if (t.isAlive()) // precheck that t is startable
                             throw new IllegalThreadStateException();
@@ -1797,6 +1798,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         if (isRunning(c) && workQueue.offer(command)) {
             int recheck = ctl.get();
             if (!isRunning(recheck) && remove(command))
+                // 已经关闭了，拒绝
                 reject(command);
             else if (workerCountOf(recheck) == 0)
                 addWorker(null, false);
@@ -1978,15 +1980,19 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         int delta = corePoolSize - this.corePoolSize;
         this.corePoolSize = corePoolSize;
         if (workerCountOf(ctl.get()) > corePoolSize)
+            // 如果core已经超出了设置大小，就关闭空闲的worker
             interruptIdleWorkers();
         else if (delta > 0) {
             // We don't really know how many new threads are "needed".
             // As a heuristic, prestart enough new workers (up to new
             // core size) to handle the current number of tasks in
             // queue, but stop if queue becomes empty while doing so.
+            // 为什么要考虑workQueue，如果workQueue大小是0，也就是现在的Worker已经够用
+            // 不需要新增Worker，如果不够用，增大至workQueue大小也足够了
             int k = Math.min(delta, workQueue.size());
             while (k-- > 0 && addWorker(null, true)) {
                 if (workQueue.isEmpty())
+                    // 防止新提交任务由于core增大也在新增Worker，因此，队列没了也就不用增加了
                     break;
             }
         }

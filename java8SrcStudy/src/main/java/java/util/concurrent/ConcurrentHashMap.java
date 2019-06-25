@@ -146,7 +146,7 @@ import java.util.stream.Stream;
  *
  * <p>Like {@link Hashtable} but unlike {@link HashMap}, this class
  * does <em>not</em> allow {@code null} to be used as a key or value.
- *
+ * 不允许空key和空value
  * <p>ConcurrentHashMaps support a set of sequential and parallel bulk
  * operations that, unlike most {@link Stream} methods, are designed
  * to be safely, and often sensibly, applied even with maps that are
@@ -1008,6 +1008,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /** Implementation for put and putIfAbsent */
     final V putVal(K key, V value, boolean onlyIfAbsent) {
+        // 不允许空key和空value
         if (key == null || value == null) throw new NullPointerException();
         int hash = spread(key.hashCode());
         int binCount = 0;
@@ -1015,7 +1016,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Node<K,V> f; int n, i, fh;
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
+            // 如果数组第一个为null
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+                // 尝试使用cas赋值
                 if (casTabAt(tab, i, null,
                              new Node<K,V>(hash, key, value, null)))
                     break;                   // no lock when adding to empty bin
@@ -1024,7 +1027,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 tab = helpTransfer(tab, f);
             else {
                 V oldVal = null;
+                // 数组第一个不为空，那么就锁住此值去修改
                 synchronized (f) {
+                    // double check 防止获取锁后f已经改遍，不再数组第一个了
                     if (tabAt(tab, i) == f) {
                         if (fh >= 0) {
                             binCount = 1;

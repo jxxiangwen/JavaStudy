@@ -542,7 +542,7 @@ public class LinkedList<E>
      * Tells if the argument is the index of a valid position for an
      * iterator or an add operation.
      */
-    // 相比isElementIndex多了一个index == size
+    // 相比isElementIndex多了一个index == size，因为isPositionIndex可以在size处
     private boolean isPositionIndex(int index) {
         return index >= 0 && index <= size;
     }
@@ -573,11 +573,13 @@ public class LinkedList<E>
         // assert isElementIndex(index);
 
         if (index < (size >> 1)) {
+            // 如果index在前半段就从前往后遍历
             Node<E> x = first;
             for (int i = 0; i < index; i++)
                 x = x.next;
             return x;
         } else {
+            // 如果index在后半段就从后往前遍历
             Node<E> x = last;
             for (int i = size - 1; i > index; i--)
                 x = x.prev;

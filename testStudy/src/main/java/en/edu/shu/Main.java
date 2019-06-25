@@ -2,6 +2,7 @@ package en.edu.shu;
 
 import org.apache.tools.ant.types.resources.Archives;
 
+import javax.xml.transform.Source;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -12,6 +13,8 @@ import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Main {
 
@@ -33,11 +36,11 @@ public class Main {
     }
 
     static <T extends Number> T getObject() {
-        return (T)Long.valueOf(1L);
+        return (T) Long.valueOf(1L);
     }
 
 
-    public void get() throws Exception{
+    public void get() throws Exception {
         ProtectionDomain protectionDomain = getClass().getProtectionDomain();
         CodeSource codeSource = protectionDomain.getCodeSource();
         URI location = (codeSource == null ? null : codeSource.getLocation().toURI());
@@ -53,23 +56,19 @@ public class Main {
 
     }
 
-    public class TestPool implements Runnable{
+    public class TestPool implements Runnable {
         @Override
         public void run() {
-            while (true){
+            while (true) {
 
             }
         }
     }
 
     public static void main(String... args) throws Exception {
-        Properties properties = System.getProperties();
-        Iterator<Map.Entry<Object, Object>> iterator = properties.entrySet().iterator();
-        while (iterator.hasNext()){
-            Map.Entry<Object, Object> next = iterator.next();
-            System.out.println(next.getKey() + ":" + next.getValue());
-        }
-        PushExecutor.getInstance().execute(new Thread());
+        List<Integer> integers = Arrays.asList(1, 2, 3);
+        List<Integer> collect = integers.stream().filter(v -> v > 1).collect(Collectors.toList());
+        System.out.println(collect);
     }
 
     private static ThreadLocal<Integer> pos = new ThreadLocal<Integer>() {

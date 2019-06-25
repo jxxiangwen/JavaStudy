@@ -346,9 +346,11 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
              * signalled if it ever changes from capacity. Similarly
              * for all other uses of count in other wait guards.
              */
+            // 到达容量，等待有元素被取走
             while (count.get() == capacity) {
                 notFull.await();
             }
+            // 加入队列
             enqueue(node);
             c = count.getAndIncrement();
             if (c + 1 < capacity)

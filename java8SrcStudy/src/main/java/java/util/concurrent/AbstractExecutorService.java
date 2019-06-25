@@ -289,7 +289,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
 
             // Interleave time checks and calls to execute in case
             // executor doesn't have any/much parallelism.
-            // 下面所有逻辑表明只有到了超时时间就返回futures，
+            // 下面所有逻辑表明只要到了超时时间就返回futures，
             // 不管有没有提交还是提交了未执行完成
             for (int i = 0; i < size; i++) {
                 execute((Runnable)futures.get(i));
