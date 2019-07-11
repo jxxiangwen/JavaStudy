@@ -44,7 +44,8 @@ import java.lang.ref.*;
  * @see     ThreadLocal
  * @since   1.2
  */
-
+// 和ThreadLocal的差别在于使用Thread的inheritableThreadLocals，而ThreadLocal使用Thread的threadLocals
+//  inheritableThreadLocals在Thread初始化的时候允许通过父Thread继承，可以实现上下文传递
 public class InheritableThreadLocal<T> extends ThreadLocal<T> {
     /**
      * Computes the child's initial value for this inheritable thread-local

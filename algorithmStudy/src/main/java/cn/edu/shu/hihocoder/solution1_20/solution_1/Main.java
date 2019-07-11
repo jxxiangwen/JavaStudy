@@ -1,6 +1,8 @@
 package cn.edu.shu.hihocoder.solution1_20.solution_1;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 描述
@@ -25,6 +27,17 @@ import java.util.*;
  */
 public class Main {
     public static void main(String[] args) {
+        Map<String,String> map = new HashMap<>(2);
+        map.put("1","2");
+        map.put("2","2");
+        map = new HashMap<>();
+        for (int i = 0; i < 20 ; i++){
+            if (i == 12){
+                System.out.println("resize");
+            }
+            map.put(String.valueOf(i),String.valueOf(i));
+        }
+        System.out.println(map);
         Scanner scanner = new Scanner(System.in);
         while (scanner.hasNext()){
             int a = scanner.nextInt();

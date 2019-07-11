@@ -755,6 +755,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                         do {
                             next = e.next;
                             if ((e.hash & oldCap) == 0) {
+                                // 还放在原来位置
                                 if (loTail == null)
                                     loHead = e;
                                 else
@@ -762,6 +763,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                                 loTail = e;
                             }
                             else {
+                                // 放在j + oldCap 位置
                                 if (hiTail == null)
                                     hiHead = e;
                                 else

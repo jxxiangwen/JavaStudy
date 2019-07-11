@@ -609,7 +609,7 @@ public class ThreadLocal<T> {
             tab[staleSlot].value = null;
             tab[staleSlot] = null;
             size--;
-
+            // 由于使用开放地址法，当需要删除一个key时，必须把后续的key重新hash
             // Rehash until we encounter null
             Entry e;
             int i;
@@ -617,15 +617,17 @@ public class ThreadLocal<T> {
                  (e = tab[i]) != null;
                  i = nextIndex(i, len)) {
                 ThreadLocal<?> k = e.get();
+                // 如果下一个key也被删除，就删除
                 if (k == null) {
                     e.value = null;
                     tab[i] = null;
                     size--;
                 } else {
+                    // 计算key的原本应该存储的位置
                     int h = k.threadLocalHashCode & (len - 1);
                     if (h != i) {
                         tab[i] = null;
-
+                        // 通过开放地址法寻找下一个为空的位置存储key
                         // Unlike Knuth 6.4 Algorithm R, we must scan until
                         // null because multiple entries could have been stale.
                         while (tab[h] != null)

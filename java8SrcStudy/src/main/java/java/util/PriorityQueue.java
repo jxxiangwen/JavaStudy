@@ -257,7 +257,9 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         if (a.getClass() != Object[].class)
             a = Arrays.copyOf(a, a.length, Object[].class);
         int len = a.length;
+        // 长度为1或者比较对象不为null
         if (len == 1 || this.comparator != null)
+            // 确保所有元素都不为null
             for (int i = 0; i < len; i++)
                 if (a[i] == null)
                     throw new NullPointerException();
@@ -272,6 +274,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      */
     private void initFromCollection(Collection<? extends E> c) {
         initElementsFromCollection(c);
+        // 堆化
         heapify();
     }
 
@@ -285,12 +288,13 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
     /**
      * Increases the capacity of the array.
-     *
+     * 扩容，由于使用数组存储，扩容比较简单，除了参数检查就是直接拷贝
      * @param minCapacity the desired minimum capacity
      */
     private void grow(int minCapacity) {
         int oldCapacity = queue.length;
         // Double size if small; else grow by 50%
+        // 小于64就翻倍，否则就增长50%
         int newCapacity = oldCapacity + ((oldCapacity < 64) ?
                                          (oldCapacity + 2) :
                                          (oldCapacity >> 1));
@@ -302,6 +306,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
     private static int hugeCapacity(int minCapacity) {
         if (minCapacity < 0) // overflow
+            // 溢出了
             throw new OutOfMemoryError();
         return (minCapacity > MAX_ARRAY_SIZE) ?
             Integer.MAX_VALUE :
@@ -334,19 +339,24 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         if (e == null)
             throw new NullPointerException();
         modCount++;
+        // 放到堆的最后一位
         int i = size;
         if (i >= queue.length)
+            // 扩容
             grow(i + 1);
         size = i + 1;
         if (i == 0)
+            // 第一个元素
             queue[0] = e;
         else
+            // 向上调整
             siftUp(i, e);
         return true;
     }
 
     @SuppressWarnings("unchecked")
     public E peek() {
+        // 永远取出数组第一个
         return (size == 0) ? null : (E) queue[0];
     }
 
@@ -588,7 +598,9 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             return null;
         int s = --size;
         modCount++;
+        // 取出第一个结点
         E result = (E) queue[0];
+        // 拿最后一个结点来向下调整
         E x = (E) queue[s];
         queue[s] = null;
         if (s != 0)
@@ -614,8 +626,10 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         modCount++;
         int s = --size;
         if (s == i) // removed last element
+            // 删除最后一个结点，直接删除
             queue[i] = null;
         else {
+            // 拿最后一个结点到i的位置来向下调整
             E moved = (E) queue[s];
             queue[s] = null;
             siftDown(i, moved);
@@ -651,26 +665,37 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     private void siftUpComparable(int k, E x) {
         Comparable<? super E> key = (Comparable<? super E>) x;
         while (k > 0) {
+            // 获取父节点
             int parent = (k - 1) >>> 1;
             Object e = queue[parent];
-            if (key.compareTo((E) e) >= 0)
+            if (key.compareTo((E) e) >= 0) {
+                // 如果比父节点大就跳出不用比较了
                 break;
+            }
+            // 父节点下移
             queue[k] = e;
+            // 接着向上比较
             k = parent;
         }
+        // 存入
         queue[k] = key;
     }
 
     @SuppressWarnings("unchecked")
     private void siftUpUsingComparator(int k, E x) {
         while (k > 0) {
+            // 获取父节点
             int parent = (k - 1) >>> 1;
             Object e = queue[parent];
+            // 如果比父节点大就跳出不用比较了
             if (comparator.compare(x, (E) e) >= 0)
                 break;
+            // 父节点下移
             queue[k] = e;
+            // 接着向上比较
             k = parent;
         }
+        // 存入
         queue[k] = x;
     }
 
@@ -694,17 +719,24 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         Comparable<? super E> key = (Comparable<? super E>)x;
         int half = size >>> 1;        // loop while a non-leaf
         while (k < half) {
+            // 获取直系子节点
             int child = (k << 1) + 1; // assume left child is least
             Object c = queue[child];
+            // 右子节点
             int right = child + 1;
             if (right < size &&
                 ((Comparable<? super E>) c).compareTo((E) queue[right]) > 0)
+                // 如果左子节点比右子节点大，c就赋值为较小的右子节点
                 c = queue[child = right];
             if (key.compareTo((E) c) <= 0)
+                // 如果父节点小于子节点的较小值，也就是满足小根堆，跳出
                 break;
+            // 父节点赋值为子节点较小值
             queue[k] = c;
+            // 接着对交换一侧的寻找x应该存放的位置
             k = child;
         }
+        // 存入x
         queue[k] = key;
     }
 
@@ -712,21 +744,29 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     private void siftDownUsingComparator(int k, E x) {
         int half = size >>> 1;
         while (k < half) {
+            // 获取直系子节点
             int child = (k << 1) + 1;
             Object c = queue[child];
+            // 右子节点
             int right = child + 1;
             if (right < size &&
                 comparator.compare((E) c, (E) queue[right]) > 0)
+                // 如果左子节点比右子节点大，c就赋值为较小的右子节点
                 c = queue[child = right];
             if (comparator.compare(x, (E) c) <= 0)
+                // 如果父节点小于子节点的较小值，也就是满足小根堆，跳出
                 break;
+            // 父节点赋值为子节点较小值
             queue[k] = c;
+            // 接着对交换一侧的寻找x应该存放的位置
             k = child;
         }
+        // 存入x
         queue[k] = x;
     }
 
     /**
+     * 构建初始堆
      * Establishes the heap invariant (described above) in the entire tree,
      * assuming nothing about the order of the elements prior to the call.
      */
