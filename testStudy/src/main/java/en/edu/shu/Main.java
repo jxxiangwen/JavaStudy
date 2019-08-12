@@ -11,6 +11,8 @@ import java.net.URI;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.*;
+import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -66,9 +68,35 @@ public class Main {
     }
 
     public static void main(String... args) throws Exception {
-        List<Integer> integers = Arrays.asList(1, 2, 3);
-        List<Integer> collect = integers.stream().filter(v -> v > 1).collect(Collectors.toList());
-        System.out.println(collect);
+        final ReentrantLock lock = new ReentrantLock();
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for(int i = 0;i < 10; i ++){
+                    try {
+                        lock.lock();
+                        Thread.sleep(i * 1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }finally {
+                        lock.unlock();
+                    }
+                    System.out.println("innner" + i);
+                }
+            }
+        });
+        for(int i = 0;i < 10; i ++){
+            try {
+                lock.lock();
+                Thread.sleep(i * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }finally {
+                lock.unlock();
+            }
+            System.out.println("outter" + i);
+        }
+        thread.join();
     }
 
     private static ThreadLocal<Integer> pos = new ThreadLocal<Integer>() {
