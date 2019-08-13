@@ -773,7 +773,7 @@ public abstract class AbstractQueuedSynchronizer
         // 确保release propagate,即使存在其他线程在acquire或者release,
         // 如果头节点状态是SIGNAL,cas改为0,成功unpark后继节点,否则continue
         // 如果状态是0,cas改为PROPAGATE,失败continue.
-        // 成功否检查头节点是否改变,没改变结束,改变继续循环
+        // 成功后检查头节点是否改变,没改变结束,改变继续循环
         for (; ; ) {
             Node h = head;
             if (h != null && h != tail) {
@@ -828,6 +828,9 @@ public abstract class AbstractQueuedSynchronizer
         Node h = head; // Record old head for check below
         setHead(node);
         /*
+            尝试唤醒下一个入队的节点
+            1.如果传播信号已设置，也就是propagate大于0，为什么大于0代表传播可以看tryAcquireShared返回值含义
+            2.
          * Try to signal next queued node if:
          *   Propagation was indicated by caller,
          *     or was recorded (as h.waitStatus either before
@@ -1097,9 +1100,11 @@ public abstract class AbstractQueuedSynchronizer
             boolean interrupted = false;
             for (; ; ) {
                 final Node p = node.predecessor();
+                // 前继节点是head了，可以开始尝试获取了
                 if (p == head) {
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {
+                        // 申请到shared的节点成为新的head，并且唤醒后续申请shared的节点
                         setHeadAndPropagate(node, r);
                         p.next = null; // help GC
                         if (interrupted)
@@ -1237,6 +1242,7 @@ public abstract class AbstractQueuedSynchronizer
      *            uninterpreted and can represent anything you like.
      * @return {@code true} if this object is now in a fully released
      * state, so that any waiting threads may attempt to acquire;
+     * 返回true代表是完全释放状态，其他线程可以尝试申请了，比如读写锁的写锁完全释放了，可重入释放返回false
      * and {@code false} otherwise.
      * @throws IllegalMonitorStateException  if releasing would place this
      *                                       synchronizer in an illegal state. This exception must be
@@ -1274,6 +1280,7 @@ public abstract class AbstractQueuedSynchronizer
      * return values enables this method to be used in contexts
      * where acquires only sometimes act exclusively.)  Upon
      * success, this object has been acquired.
+     * 返回负值代表失败，0代表成功但是接下来共享模式不能成功，1代表成功且接下来共享模式也有可能成功
      * @throws IllegalMonitorStateException  if acquiring would place this
      *                                       synchronizer in an illegal state. This exception must be
      *                                       thrown in a consistent fashion for synchronization to work
@@ -1298,6 +1305,7 @@ public abstract class AbstractQueuedSynchronizer
      *            uninterpreted and can represent anything you like.
      * @return {@code true} if this release of shared mode may permit a
      * waiting acquire (shared or exclusive) to succeed; and
+     * 返回true就代表下一个申请无论是共享还是排他可以成功
      * {@code false} otherwise
      * @throws IllegalMonitorStateException  if releasing would place this
      *                                       synchronizer in an illegal state. This exception must be
@@ -1664,6 +1672,7 @@ public abstract class AbstractQueuedSynchronizer
         Node t = tail; // Read fields in reverse initialization order
         Node h = head;
         Node s;
+        // 如果head不等于tail，并且当前线程不是head下一个节点就有前继节点
         return h != t &&
                 ((s = h.next) == null || s.thread != Thread.currentThread());
     }

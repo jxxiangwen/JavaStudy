@@ -13,6 +13,7 @@ import java.security.ProtectionDomain;
 import java.util.*;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -66,33 +67,45 @@ public class Main {
             }
         }
     }
+    public static final ThreadLocal<String> local = new ThreadLocal<String>(){
+        @Override
+        public String initialValue() {
+            return "test";
+        }
+    };
 
     public static void main(String... args) throws Exception {
-        final ReentrantLock lock = new ReentrantLock();
+        System.out.println(local.get());
+        local.remove();
+        System.out.println(local.get());
+        System.out.println(1 << 1);
+        System.out.println((1 << 16) - 1);
+        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock ();
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                for(int i = 0;i < 10; i ++){
+                for (int i = 0; i < 10; i++) {
                     try {
-                        lock.lock();
+                        lock.readLock().lock();
                         Thread.sleep(i * 1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
-                    }finally {
-                        lock.unlock();
+                    } finally {
+                        lock.readLock().unlock();
                     }
                     System.out.println("innner" + i);
                 }
             }
         });
-        for(int i = 0;i < 10; i ++){
+        thread.start();
+        for (int i = 0; i < 10; i++) {
             try {
-                lock.lock();
+                lock.readLock().lock();
                 Thread.sleep(i * 1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }finally {
-                lock.unlock();
+            } finally {
+                lock.readLock().unlock();
             }
             System.out.println("outter" + i);
         }
