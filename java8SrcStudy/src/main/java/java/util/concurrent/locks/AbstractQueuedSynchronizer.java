@@ -1014,7 +1014,6 @@ public abstract class AbstractQueuedSynchronizer
                     interrupted = true;
             }
         } finally {
-            // predecessor和tryAcquire都有可能出现异常
             if (failed)
                 cancelAcquire(node);
         }
@@ -1350,7 +1349,9 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final void acquire(int arg) {
         if (!tryAcquire(arg) &&
+                // 申请失败就入队排他节点
                 acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+            // 为什么调用看acquireQueued
             selfInterrupt();
     }
 

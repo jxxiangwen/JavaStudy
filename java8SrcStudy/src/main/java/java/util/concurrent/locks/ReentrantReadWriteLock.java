@@ -381,6 +381,7 @@ public class ReentrantReadWriteLock
          * locks to be very cheap.
          */
         // 第一个申请读锁成功的线程在tryReleaseShared会释放
+        // 使用单独变量的考虑可能就是注释最后一句，使得无竞争的时候追踪读锁持有者非常轻量
         private transient Thread firstReader = null;
         private transient int firstReaderHoldCount;
 
