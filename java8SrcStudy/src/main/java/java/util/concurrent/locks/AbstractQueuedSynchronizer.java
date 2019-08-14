@@ -820,7 +820,7 @@ public abstract class AbstractQueuedSynchronizer
      * Sets head of queue, and checks if successor may be waiting
      * in shared mode, if so propagating if either propagate > 0 or
      * PROPAGATE status was set.
-     *
+     * 传播只需要唤醒后继节点，后继节点会去抢共享锁，如然后又调用这个方法传播下去，直到下一个节点不是共享的
      * @param node      the node
      * @param propagate the return value from a tryAcquireShared
      */
@@ -873,7 +873,7 @@ public abstract class AbstractQueuedSynchronizer
             return;
 
         node.thread = null;
-        // 跳过cancel节点
+        // 跳过前继已经cancel的节点
         // Skip cancelled predecessors
         Node pred = node.prev;
         while (pred.waitStatus > 0)
@@ -890,6 +890,7 @@ public abstract class AbstractQueuedSynchronizer
         node.waitStatus = Node.CANCELLED;
 
         // If we are the tail, remove ourselves.
+        // 如果本节点是队尾，直接尝试把自己删除
         if (node == tail && compareAndSetTail(node, pred)) {
             compareAndSetNext(pred, predNext, null);
         } else {
@@ -988,7 +989,7 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Acquires in exclusive uninterruptible mode for thread already in
      * queue. Used by condition wait methods as well as acquire.
-     *
+     * 和doAcquireInterruptibly的区别就是就算被中断还是会去获取锁，等待获取到了退出的时候才会抛出中断异常
      * @param node the node
      * @param arg  the acquire argument
      * @return {@code true} if interrupted while waiting
@@ -1000,16 +1001,17 @@ public abstract class AbstractQueuedSynchronizer
             for (; ; ) {
                 //这里就可能抛出Null异常, 不应该出现，因为head的存在
                 final Node p = node.predecessor();
-                // 为什么要tryAcquire?前继节点是head,证明已经到了队列头部
-                // for循环会使进入方法的线程一直阻塞,直到下面的if成立
-                // 成立时就已经获得了锁,如果interrupted,返回后会抛出异常
+                // 前继节点是head，证明已经到了队列头部，尝试去获取锁
+                // 如果interrupted,返回后抛出异常
                 if (p == head && tryAcquire(arg)) {
                     setHead(node);
                     p.next = null; // help GC
                     failed = false;
                     return interrupted;
                 }
+                // 在将线程阻塞前,需要保证前继节点的status = SIGNAL
                 if (shouldParkAfterFailedAcquire(p, node) &&
+                        // 阻塞线程直到unpark或者被中断
                         parkAndCheckInterrupt())
                     interrupted = true;
             }
@@ -1021,7 +1023,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * Acquires in exclusive interruptible mode.
-     *
+     * 和acquire的区别就是被中断立刻抛出异常
      * @param arg the acquire argument
      */
     private void doAcquireInterruptibly(int arg)
@@ -1075,6 +1077,7 @@ public abstract class AbstractQueuedSynchronizer
                 if (nanosTimeout <= 0L)
                     return false;
                 if (shouldParkAfterFailedAcquire(p, node) &&
+                        // 剩余时间大于自旋时间才会park，其他情况自旋等待
                         nanosTimeout > spinForTimeoutThreshold)
                     LockSupport.parkNanos(this, nanosTimeout);
                 if (Thread.interrupted())
@@ -1415,6 +1418,7 @@ public abstract class AbstractQueuedSynchronizer
     public final boolean release(int arg) {
         if (tryRelease(arg)) {
             Node h = head;
+            // 如果waitStatus不等于0，也就是可能是SIGNAL,CANCELLED,CONDITION,PROPAGATE TODO 再分析
             if (h != null && h.waitStatus != 0)
                 unparkSuccessor(h);
             return true;
@@ -1613,7 +1617,7 @@ public abstract class AbstractQueuedSynchronizer
      * #tryAcquireShared}) then it is guaranteed that the current thread
      * is not the first queued thread.  Used only as a heuristic in
      * ReentrantReadWriteLock.
-     * 如果当前线程在申请共享模式,返回true时保证当前线程不是队列第一个线程
+     * 下一个在队列中等待的线程是不是独占模式，只用在读写锁的非公平模式
      */
     final boolean apparentlyFirstQueuedIsExclusive() {
         Node h, s;
@@ -1788,9 +1792,10 @@ public abstract class AbstractQueuedSynchronizer
      * @return true if is reacquiring
      */
     final boolean isOnSyncQueue(Node node) {
-        // 条件队列或者为head
+        // 在条件队列或者为head
         if (node.waitStatus == Node.CONDITION || node.prev == null)
             return false;
+        // 如果有next，必定在AQS的同步等待队列
         if (node.next != null) // If has successor, it must be on queue
             return true;
         /*
@@ -1801,6 +1806,7 @@ public abstract class AbstractQueuedSynchronizer
          * unless the CAS failed (which is unlikely), it will be
          * there, so we hardly ever traverse much.
          */
+        // 从后往前查找是否在队列
         return findNodeFromTail(node);
     }
 
@@ -1858,6 +1864,7 @@ public abstract class AbstractQueuedSynchronizer
      * @return true if cancelled before the node was signalled
      */
     final boolean transferAfterCancelledWait(Node node) {
+        // 将节点返回aqs等待队列
         if (compareAndSetWaitStatus(node, Node.CONDITION, 0)) {
             enq(node);
             return true;
@@ -2019,6 +2026,7 @@ public abstract class AbstractQueuedSynchronizer
         private Node addConditionWaiter() {
             Node t = lastWaiter;
             // If lastWaiter is cancelled, clean out.
+            // 清除cancel的节点
             if (t != null && t.waitStatus != Node.CONDITION) {
                 unlinkCancelledWaiters();
                 t = lastWaiter;
@@ -2193,6 +2201,8 @@ public abstract class AbstractQueuedSynchronizer
         }
 
         /**
+         * 可以调用await代表已经是aqs等待队列的头结点，已经获取了锁，会加入条件等待队列排队，
+         * 等待signal之后重新抢锁
          * Implements interruptible condition wait.
          * <ol>
          * <li> If current thread is interrupted, throw InterruptedException.
@@ -2212,16 +2222,21 @@ public abstract class AbstractQueuedSynchronizer
             // 由于独占调用,节点已经在head,调用release方法即可
             int savedState = fullyRelease(node);
             int interruptMode = 0;
+            // 看是否在condition的同步等待队列，不在就需要park
             while (!isOnSyncQueue(node)) {
                 LockSupport.park(this);
+                // 到这里就代表被condition.signal唤醒了
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
             }
+            // 申请锁
             if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
                 interruptMode = REINTERRUPT;
+            // 删除cancel的等待者
             if (node.nextWaiter != null) // clean up if cancelled
                 unlinkCancelledWaiters();
             if (interruptMode != 0)
+                // 中断处理
                 reportInterruptAfterWait(interruptMode);
         }
 

@@ -1464,12 +1464,14 @@ public final class String
      */
     public int hashCode() {
         int h = hash;
+        // 只有没计算过才会计算
         if (h == 0 && value.length > 0) {
             char val[] = value;
 
             for (int i = 0; i < value.length; i++) {
                 h = 31 * h + val[i];
             }
+            // 缓存了计算出来的hashcode
             hash = h;
         }
         return h;
