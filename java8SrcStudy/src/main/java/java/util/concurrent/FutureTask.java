@@ -113,7 +113,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @param s completed state value
      */
     @SuppressWarnings("unchecked")
-    // 只有执行完成后才会调用
+    // 执行get调用
     private V report(int s) throws ExecutionException {
         Object x = outcome;
         if (s == NORMAL)

@@ -157,6 +157,7 @@ public class CyclicBarrier {
     /** Condition to wait on until tripped */
     private final Condition trip = lock.newCondition();
     /** The number of parties */
+    // 线程参与数量
     private final int parties;
     /* The command to run when tripped */
     private final Runnable barrierCommand;
@@ -212,6 +213,7 @@ public class CyclicBarrier {
             }
 
             int index = --count;
+            // 由将count减为0的线程来执行barrierCommand
             if (index == 0) {  // tripped
                 boolean ranAction = false;
                 try {
@@ -219,6 +221,7 @@ public class CyclicBarrier {
                     if (command != null)
                         command.run();
                     ranAction = true;
+                    // 开始下一代计数
                     nextGeneration();
                     return 0;
                 } finally {
@@ -231,8 +234,10 @@ public class CyclicBarrier {
             for (;;) {
                 try {
                     if (!timed)
+                        // 无超时等待，直到条件满足，产生下一代会调用trip.signalAll();
                         trip.await();
                     else if (nanos > 0L)
+                        // 超时等待
                         nanos = trip.awaitNanos(nanos);
                 } catch (InterruptedException ie) {
                     if (g == generation && ! g.broken) {
@@ -248,7 +253,7 @@ public class CyclicBarrier {
 
                 if (g.broken)
                     throw new BrokenBarrierException();
-
+                // 开始下一代了，本代就结束了，可以返回了
                 if (g != generation)
                     return index;
 

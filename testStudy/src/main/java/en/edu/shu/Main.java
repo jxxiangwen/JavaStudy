@@ -75,6 +75,10 @@ public class Main {
     };
 
     public static void main(String... args) throws Exception {
+        Thread.currentThread().interrupt();
+        if(Thread.currentThread().isInterrupted()){
+            Thread.currentThread().interrupt();
+        }
         System.out.println(local.get());
         local.remove();
         System.out.println(local.get());
