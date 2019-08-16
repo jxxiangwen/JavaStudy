@@ -231,7 +231,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      *
      * <p>This method is invoked internally by the {@link #run} method
      * upon successful completion of the computation.
-     *
+     * 设置结果
      * @param v the value
      */
     protected void set(V v) {
@@ -262,6 +262,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     public void run() {
+        // 必须是初始状态
         if (state != NEW ||
             !UNSAFE.compareAndSwapObject(this, runnerOffset,
                                          null, Thread.currentThread()))
@@ -304,9 +305,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
      *
      * @return {@code true} if successfully run and reset
      */
-    // 主要为了Scheduled调用,也就是周期性的调用,并且只有失败才设置结果
-    // 其他时候
+    // 主要为了Scheduled调用,也就是周期性的调用，整个函数如果不出异常不会改编state状态，才可以周期执行
     protected boolean runAndReset() {
+        // 必须是初始状态
         if (state != NEW ||
             !UNSAFE.compareAndSwapObject(this, runnerOffset,
                                          null, Thread.currentThread()))
@@ -320,6 +321,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                     c.call(); // don't set result
                     ran = true;
                 } catch (Throwable ex) {
+                    // 设置异常会改编state状态，导致最后一行返回false
                     setException(ex);
                 }
             }
@@ -329,6 +331,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
             runner = null;
             // state must be re-read after nulling runner to prevent
             // leaked interrupts
+            // 重新读取，防止被中断了，改变了状态
             s = state;
             if (s >= INTERRUPTING)
                 handlePossibleCancellationInterrupt(s);
@@ -429,7 +432,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                 // 正在结束,当前线程让出cpu,等待结束
                 Thread.yield();
             else if (q == null)
-                // 第一次循环且未结束
+                // 第一次循环且未结束,上面的代码比较好，先验证结束，再来做其他事情
                 q = new WaitNode();
             else if (!queued)
                 // 新的等待线程在队列的前面
@@ -441,6 +444,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                     removeWaiter(q);
                     return state;
                 }
+                // 时间等待
                 LockSupport.parkNanos(this, nanos);
             }
             else
@@ -460,18 +464,23 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
     private void removeWaiter(WaitNode node) {
         if (node != null) {
+            // 标记要删除的结点
             node.thread = null;
             retry:
             for (;;) {          // restart on removeWaiter race
                 for (WaitNode pred = null, q = waiters, s; q != null; q = s) {
                     s = q.next;
+                    // 如果不是标记的thread = null的节点一直执行这一步，加上上一步就相当于一直在跳过非空结点
                     if (q.thread != null)
                         pred = q;
                     else if (pred != null) {
+                        // 到这里就相当于找到了要删除的结点，此时q指向要删除的结点
+                        // 下面一行就等于删除了
                         pred.next = s;
                         if (pred.thread == null) // check for race
                             continue retry;
                     }
+                    // 如果删除的是头结点会直接进入这一步
                     else if (!UNSAFE.compareAndSwapObject(this, waitersOffset,
                                                           q, s))
                         continue retry;
