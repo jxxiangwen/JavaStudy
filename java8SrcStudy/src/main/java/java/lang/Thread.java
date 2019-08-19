@@ -909,7 +909,9 @@ public class Thread implements Runnable {
             checkAccess();
 
         synchronized (blockerLock) {
-            // java nio才会设置blocker
+            // java nio才会设置blocker,java nio中继承了AbstractInterruptibleChannel类之后在调用方法之前
+            // 调用AbstractInterruptibleChannel的begin，会调用Thread的blockOn，设置blocker，这样中断后调用b.interrupt(this)
+            // 最后AbstractInterruptibleChannel的end方法会判断是否需要抛出异常
             Interruptible b = blocker;
             if (b != null) {
                 interrupt0();           // Just to set the interrupt flag

@@ -197,6 +197,8 @@ public abstract class AbstractInterruptibleChannel
     {
         blockedOn(null);
         Thread interrupted = this.interrupted;
+        // 虽然Thread的interrupt方法会设置interrupted，但是是把interrupted设置为调用interrupt方法的线程
+        // 也就是只有线程自己调用interrupt方法下面的判断才成立，才会抛出ClosedByInterruptException
         if (interrupted != null && interrupted == Thread.currentThread()) {
             interrupted = null;
             throw new ClosedByInterruptException();
@@ -205,7 +207,8 @@ public abstract class AbstractInterruptibleChannel
             throw new AsynchronousCloseException();
     }
 
-
+    // 调用java.lang.System.blockedOn,最终调用Thread的blockedOn，将intr设置到Thread的成员变量
+    // 线程调用interrupt方法会调用intr的interrupt,设置本类成员变量interrupted，这样就可以在做io操作的时候知道有没有被中断
     // -- sun.misc.SharedSecrets --
     static void blockedOn(Interruptible intr) {         // package-private
         sun.misc.SharedSecrets.getJavaLangAccess().blockedOn(Thread.currentThread(),

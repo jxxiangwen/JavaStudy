@@ -11,6 +11,10 @@ import java.net.URI;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -67,53 +71,42 @@ public class Main {
             }
         }
     }
-    public static final ThreadLocal<String> local = new ThreadLocal<String>(){
+
+    public static final ThreadLocal<String> local = new ThreadLocal<String>() {
         @Override
         public String initialValue() {
             return "test";
         }
     };
 
+    static void deathLock() {
+        LockSupport.park();
+        System.out.println("unpark by interrupted");
+    }
+
     public static void main(String... args) throws Exception {
-        Thread.currentThread().interrupt();
-        if(Thread.currentThread().isInterrupted()){
-            Thread.currentThread().interrupt();
-        }
-        System.out.println(local.get());
-        local.remove();
-        System.out.println(local.get());
-        System.out.println(1 << 1);
-        System.out.println((1 << 16) - 1);
-        final ReentrantReadWriteLock lock = new ReentrantReadWriteLock ();
-        Thread thread = new Thread(new Runnable() {
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        executorService.submit(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < 10; i++) {
-                    try {
-                        lock.readLock().lock();
-                        Thread.sleep(i * 1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } finally {
-                        lock.readLock().unlock();
-                    }
-                    System.out.println("innner" + i);
-                }
+                System.out.println("Runnable");
             }
         });
-        thread.start();
-        for (int i = 0; i < 10; i++) {
-            try {
-                lock.readLock().lock();
-                Thread.sleep(i * 1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } finally {
-                lock.readLock().unlock();
+        executorService.shutdown();
+        executorService.awaitTermination(1, TimeUnit.HOURS);
+        Thread thread1 = new Thread() {
+            @Override
+            public void run() {
+                deathLock();
             }
-            System.out.println("outter" + i);
-        }
-        thread.join();
+        };
+        System.out.println("Starting thread...");
+        thread1.start();
+        Thread.sleep(3000);
+        System.out.println("Interrupting thread...");
+        thread1.interrupt();
+        Thread.sleep(3000);
+        System.out.println("Stopping application...");
     }
 
     private static ThreadLocal<Integer> pos = new ThreadLocal<Integer>() {
