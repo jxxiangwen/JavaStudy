@@ -351,10 +351,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              */
 
             SNode s = null; // constructed/reused as needed
+            // e==null，消费者，否则生产者
             int mode = (e == null) ? REQUEST : DATA;
 
             for (;;) {
                 SNode h = head;
+                // 栈空或者模式和当前模式相同
                 if (h == null || h.mode == mode) {  // empty or same-mode
                     if (timed && nanos <= 0) {      // can't wait
                         if (h != null && h.isCancelled())
@@ -677,8 +679,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                 QNode t = tail;
                 QNode h = head;
                 if (t == null || h == null)         // saw uninitialized value
+                    // 未初始化，自旋等待
                     continue;                       // spin
-
+                // 还没有存入值或者tail的模式和当前模式相同
                 if (h == t || t.isData == isData) { // empty or same-mode
                     QNode tn = t.next;
                     if (t != tail)                  // inconsistent read
@@ -860,7 +863,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Creates a {@code SynchronousQueue} with the specified fairness policy.
-     *
+     * 如果公平，等待线程使用FIFO顺序竞争，否则顺序不明确 TODO 怎样不明确
      * @param fair if true, waiting threads contend in FIFO order for
      *        access; otherwise the order is unspecified.
      */
