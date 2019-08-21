@@ -1458,6 +1458,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             int rs = runStateOf(c);
 
             // Check if queue empty only if necessary.
+            // 如果线程池关闭，主要通过状态>STOP或者队列为空退出线程执行
             if (rs >= SHUTDOWN && (rs >= STOP || workQueue.isEmpty())) {
                 decrementWorkerCount();
                 return null;
@@ -1499,6 +1500,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     return r;
                 timedOut = true;
             } catch (InterruptedException retry) {
+                // 关闭线程池会打断线程，这里设置timeout为false是希望不通过第二个返回null的地方退出，而通过第一个返回null的地方退出
                 timedOut = false;
             }
         }

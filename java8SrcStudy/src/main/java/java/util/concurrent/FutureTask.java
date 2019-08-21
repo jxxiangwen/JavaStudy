@@ -305,7 +305,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      *
      * @return {@code true} if successfully run and reset
      */
-    // 主要为了Scheduled调用,也就是周期性的调用，整个函数如果不出异常不会改编state状态，才可以周期执行
+    // 主要为了Scheduled调用,也就是周期性的调用，整个函数如果不出异常不会改变state状态，才可以周期执行
     protected boolean runAndReset() {
         // 必须是初始状态
         if (state != NEW ||

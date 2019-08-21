@@ -186,6 +186,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     static final int NCPUS = Runtime.getRuntime().availableProcessors();
 
     /**
+     * 对于超时等待的最大自旋次数
      * The number of times to spin before blocking in timed waits.
      * The value is empirically derived -- it works well across a
      * variety of processors and OSes. Empirically, the best value
@@ -195,6 +196,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     static final int maxTimedSpins = (NCPUS < 2) ? 0 : 32;
 
     /**
+     * 对于不超时等待的最大自旋次数
      * The number of times to spin before blocking in untimed waits.
      * This is greater than timed value because untimed waits spin
      * faster since they don't need to check times on each spin.
@@ -202,6 +204,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     static final int maxUntimedSpins = maxTimedSpins * 16;
 
     /**
+     * 如果等待时间大于此值才使用Lock.park，否则就自旋
      * The number of nanoseconds for which it is faster to spin
      * rather than to use timed park. A rough estimate suffices.
      */

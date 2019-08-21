@@ -11,9 +11,7 @@ import java.net.URI;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
@@ -85,28 +83,40 @@ public class Main {
     }
 
     public static void main(String... args) throws Exception {
-        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
+        String s = null;
+        ScheduledFuture future = executorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("Runnable");
+                if(s == null){
+                    throw new NullPointerException();
+                }
+            }
+        }, 0, 1, TimeUnit.SECONDS);
         executorService.submit(new Runnable() {
             @Override
             public void run() {
                 System.out.println("Runnable");
+                if(s == null){
+                    throw new NullPointerException();
+                }
             }
         });
-        executorService.shutdown();
-        executorService.awaitTermination(1, TimeUnit.HOURS);
-        Thread thread1 = new Thread() {
+        executorService.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
+        executorService.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                deathLock();
+                executorService.shutdownNow();
+
+                System.out.println("shutdownNow");
             }
-        };
-        System.out.println("Starting thread...");
-        thread1.start();
-        Thread.sleep(3000);
-        System.out.println("Interrupting thread...");
-        thread1.interrupt();
-        Thread.sleep(3000);
-        System.out.println("Stopping application...");
+        }, 3, 3, TimeUnit.SECONDS);
+        future.get();
+        System.out.println();
+        System.out.println(future.get());
+        System.out.println(future.get());
     }
 
     private static ThreadLocal<Integer> pos = new ThreadLocal<Integer>() {
