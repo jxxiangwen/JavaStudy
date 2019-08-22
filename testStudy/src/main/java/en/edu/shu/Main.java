@@ -83,40 +83,36 @@ public class Main {
     }
 
     public static void main(String... args) throws Exception {
-        ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(1);
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
         String s = null;
-        ScheduledFuture future = executorService.scheduleAtFixedRate(new Runnable() {
+        SynchronousQueue queue = new SynchronousQueue();
+        Future future = executorService.submit(new Runnable() {
             @Override
             public void run() {
-                System.out.println("Runnable");
-                if(s == null){
-                    throw new NullPointerException();
-                }
-            }
-        }, 0, 1, TimeUnit.SECONDS);
-        executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                System.out.println("Runnable");
-                if(s == null){
-                    throw new NullPointerException();
+                try {
+                    Thread.sleep(1000);
+                    System.out.println("put1 start");
+                    queue.poll(1000,TimeUnit.HOURS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         });
-        executorService.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
-        executorService.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-        executorService.scheduleAtFixedRate(new Runnable() {
+        executorService.submit(new Runnable() {
             @Override
             public void run() {
-                executorService.shutdownNow();
+                try {
+                    Thread.sleep(1500);
+                    System.out.println("put2 start");
+                    queue.poll(1000,TimeUnit.HOURS);
 
-                System.out.println("shutdownNow");
+//                    System.out.println("take done");
+//                    Object poll = queue.poll();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-        }, 3, 3, TimeUnit.SECONDS);
-        future.get();
-        System.out.println();
-        System.out.println(future.get());
-        System.out.println(future.get());
+        });
     }
 
     private static ThreadLocal<Integer> pos = new ThreadLocal<Integer>() {
