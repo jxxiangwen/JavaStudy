@@ -436,11 +436,17 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                                 s.casNext(m, mn);   // help unlink
                         }
                     }
+                    // 走到这里也就是说和头结点不是同一种模式，且头结点正在fulfilling
+                    // 可以看上面的for循环，代码基本相同，就是在帮助上面的for循环操作
+                    // 因为走到这里说明头结点正在match，本节点不能入队，需要等头结点match做完才能入队
                 } else {                            // help a fulfiller
                     SNode m = h.next;               // m is h's match
+                    // fulfilling的头结点的match结点已经不存在了
                     if (m == null)                  // waiter is gone
+                        // 跳出fulfill模式
                         casHead(h, null);           // pop fulfilling node
                     else {
+                        // 帮助match和unlink
                         SNode mn = m.next;
                         if (m.tryMatch(h))          // help match
                             casHead(h, mn);         // pop both h and m
@@ -548,22 +554,30 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              * further because we don't want to doubly traverse just to
              * find sentinel.
              */
+            // 最坏情况就是需要遍历整个stack，如果有并发的clean，s可能会被并发调用删除
+            // 但是我们可以通过s的后继结点停下调用
 
             SNode past = s.next;
+            // 找到下一个没有cancel的结点
             if (past != null && past.isCancelled())
                 past = past.next;
 
             // Absorb cancelled nodes at head
+            // 删除在头结点已经cancel的结点
             SNode p;
             while ((p = head) != null && p != past && p.isCancelled())
                 casHead(p, p.next);
 
             // Unsplice embedded nodes
+            // past是s的下一节点，知道p到了past或者p为空就可以跳出循环
+            // p为null代表到了队尾，p=past代表
             while (p != null && p != past) {
                 SNode n = p.next;
                 if (n != null && n.isCancelled())
+                    // 删除cancel结点
                     p.casNext(n, n.next);
                 else
+                    // 跳过结点
                     p = n;
             }
         }
@@ -751,20 +765,29 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                     QNode tn = t.next;
                     if (t != tail)                  // inconsistent read
                         continue;
+                    // t的next不为空，代表已经有新的tail了
                     if (tn != null) {               // lagging tail
+                        // 因为设置tail是先设置tail的next，再设置tail为新结点
+                        // 这一步等于是帮忙做设置tail为新节点，这是因为可能做完设置tail的next后
+                        // 还没做设置tail为新节点就时间片到了，帮忙做是防止自己做无用的循环
                         advanceTail(t, tn);
                         continue;
                     }
+                    // 不能等待
                     if (timed && nanos <= 0)        // can't wait
                         return null;
+                    // 创建结点
                     if (s == null)
                         s = new QNode(e, isData);
+                    // 没有成功设置tail的next，有竞争
                     if (!t.casNext(null, s))        // failed to link in
                         continue;
 
+                    // 设置tail，允许失败，最终一致
                     advanceTail(t, s);              // swing tail and wait
                     Object x = awaitFulfill(s, e, timed, nanos);
                     if (x == s) {                   // wait was cancelled
+                        // cancel会设置为this，就会相等
                         clean(t, s);
                         return null;
                     }
@@ -810,15 +833,18 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
             /* Same idea as TransferStack.awaitFulfill */
             final long deadline = timed ? System.nanoTime() + nanos : 0L;
             Thread w = Thread.currentThread();
+            // 自旋次数
             int spins = ((head.next == s) ?
                     (timed ? maxTimedSpins : maxUntimedSpins) : 0);
             for (; ; ) {
                 if (w.isInterrupted())
                     s.tryCancel(e);
                 Object x = s.item;
+                // cas item或者cancel都会不一致
                 if (x != e)
                     return x;
                 if (timed) {
+                    // 剩余时间
                     nanos = deadline - System.nanoTime();
                     if (nanos <= 0L) {
                         s.tryCancel(e);
@@ -929,7 +955,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Creates a {@code SynchronousQueue} with the specified fairness policy.
-     * 如果公平，等待线程使用FIFO顺序竞争，否则顺序不明确 TODO 怎样不明确
+     * 如果公平，等待线程使用FIFO顺序竞争，否则顺序不明确,因为使用stack，刚入栈就可能碰到match出栈，
+     * 也可能入栈的都是相同模式，导致堆积，不知道何时能出栈
      *
      * @param fair if true, waiting threads contend in FIFO order for
      *             access; otherwise the order is unspecified.

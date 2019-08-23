@@ -286,12 +286,14 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * @param oldCap the length of the array
      */
     private void tryGrow(Object[] array, int oldCap) {
+        // 放弃锁，这样在申请数组的时候还可以出队
         lock.unlock(); // must release and then re-acquire main lock
         Object[] newArray = null;
         if (allocationSpinLock == 0 &&
             UNSAFE.compareAndSwapInt(this, allocationSpinLockOffset,
                                      0, 1)) {
             try {
+                // oldCap < 64 翻倍，否则增加50%
                 int newCap = oldCap + ((oldCap < 64) ?
                                        (oldCap + 2) : // grow faster if small
                                        (oldCap >> 1));
@@ -301,15 +303,19 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
                         throw new OutOfMemoryError();
                     newCap = MAX_ARRAY_SIZE;
                 }
+                // queue == array防止已经有线程扩容了，因为释放锁之后自己被挂起，
+                // 其他线程抢到锁，并且已经扩容完毕
                 if (newCap > oldCap && queue == array)
                     newArray = new Object[newCap];
             } finally {
                 allocationSpinLock = 0;
             }
         }
+        // 没有抢到分配权限，放弃cpu等待其他线程扩容
         if (newArray == null) // back off if another thread is allocating
             Thread.yield();
         lock.lock();
+        // 申请到扩容权限，扩容
         if (newArray != null && queue == array) {
             queue = newArray;
             System.arraycopy(array, 0, newArray, 0, oldCap);
@@ -329,6 +335,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
             E x = (E) array[n];
             array[n] = null;
             Comparator<? super E> cmp = comparator;
+            // 调整堆
             if (cmp == null)
                 siftDownComparable(0, x, array, n);
             else
@@ -485,11 +492,13 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
             tryGrow(array, cap);
         try {
             Comparator<? super E> cmp = comparator;
+            // 调整堆
             if (cmp == null)
                 siftUpComparable(n, e, array);
             else
                 siftUpUsingComparator(n, e, array, cmp);
             size = n + 1;
+            // 通知有数据
             notEmpty.signal();
         } finally {
             lock.unlock();

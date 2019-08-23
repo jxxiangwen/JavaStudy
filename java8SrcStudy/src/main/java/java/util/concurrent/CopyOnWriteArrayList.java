@@ -438,8 +438,11 @@ public class CopyOnWriteArrayList<E>
 
             if (oldValue != element) {
                 int len = elements.length;
+                // 拷贝一份相同数组
                 Object[] newElements = Arrays.copyOf(elements, len);
+                // 修改index值
                 newElements[index] = element;
+                // 设置回去
                 setArray(newElements);
             } else {
                 // Not quite a no-op; ensures volatile write semantics
@@ -463,7 +466,9 @@ public class CopyOnWriteArrayList<E>
         try {
             Object[] elements = getArray();
             int len = elements.length;
+            // 创建一份新的数组
             Object[] newElements = Arrays.copyOf(elements, len + 1);
+            // 在数组尾添加新元素
             newElements[len] = e;
             setArray(newElements);
             return true;

@@ -168,6 +168,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * otherwise ordinarily lock takeLock.)
      */
     private void signalNotEmpty() {
+        // 要通知线程来取，所以要用take锁
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lock();
         try {
@@ -181,6 +182,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * Signals a waiting put. Called only from take/poll.
      */
     private void signalNotFull() {
+        // 要通知线程来放，所以要用put锁
         final ReentrantLock putLock = this.putLock;
         putLock.lock();
         try {

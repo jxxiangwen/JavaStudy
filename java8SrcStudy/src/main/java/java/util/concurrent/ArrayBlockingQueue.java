@@ -91,6 +91,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     private static final long serialVersionUID = -817911632652898426L;
 
     /** The queued items */
+    // 作为循环队列
     final Object[] items;
 
     /** items index for next take, poll, peek or remove */
@@ -160,6 +161,8 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         final Object[] items = this.items;
         items[putIndex] = x;
         if (++putIndex == items.length)
+            // 因为是循环队列，所以超过数组大小就被赋值为0，
+            // 不会出现覆盖未取元素的事情，因为有count控制
             putIndex = 0;
         count++;
         notEmpty.signal();
@@ -177,6 +180,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         E x = (E) items[takeIndex];
         items[takeIndex] = null;
         if (++takeIndex == items.length)
+            // 因为是循环队列，所以超过数组大小就被赋值为0
             takeIndex = 0;
         count--;
         if (itrs != null)
@@ -195,6 +199,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         // assert items[removeIndex] != null;
         // assert removeIndex >= 0 && removeIndex < items.length;
         final Object[] items = this.items;
+        // 在take位置，可以直接删掉
         if (removeIndex == takeIndex) {
             // removing front item; just advance
             items[takeIndex] = null;
@@ -210,12 +215,15 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
             final int putIndex = this.putIndex;
             for (int i = removeIndex;;) {
                 int next = i + 1;
+                // 循环队列，到达数组末尾，重置下标
                 if (next == items.length)
                     next = 0;
+                // 向前移动对象，覆盖删除对象
                 if (next != putIndex) {
                     items[i] = items[next];
                     i = next;
                 } else {
+                    // 到最后了，设置最后为null
                     items[i] = null;
                     this.putIndex = i;
                     break;
