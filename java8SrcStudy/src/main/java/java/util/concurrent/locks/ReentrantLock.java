@@ -210,6 +210,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             if (compareAndSetState(0, 1))
                 setExclusiveOwnerThread(Thread.currentThread());
             else
+                // 函数中会调用tryAcquire，之后调用nonfairTryAcquire，也会尝试去抢锁，抢不到才会入队，不公平
                 acquire(1);
         }
 

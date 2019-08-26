@@ -584,6 +584,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * The maximum number of threads that can help resize.
      * Must fit in 32 - RESIZE_STAMP_BITS bits.
+     * 最大帮助扩容线程数
      */
     private static final int MAX_RESIZERS = (1 << (32 - RESIZE_STAMP_BITS)) - 1;
 
@@ -789,6 +790,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Base counter value, used mainly when there is no contention,
      * but also as a fallback during table initialization
      * races. Updated via CAS.
+     * 基础统计变量，主要用于无竞争时，竞争初始化CounterCell的时候也会作为一种尝试
      */
     private transient volatile long baseCount;
 
@@ -811,6 +813,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
+     * 用于控制CounterCells的创建，只有cas修改成功的线程才能创建CounterCells
      */
     private transient volatile int cellsBusy;
 
@@ -2300,6 +2303,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         if ((as = counterCells) != null ||
                 // 利用CAS方法更新baseCount的值，如果失败就有竞争，就执行下面的操作
             !U.compareAndSwapLong(this, BASECOUNT, b = baseCount, s = b + x)) {
+            // 进入这里就存在竞争了
             CounterCell a; long v; int m;
             boolean uncontended = true;
             // counterCells未初始化
@@ -2319,6 +2323,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
         if (check >= 0) {
             Node<K,V>[] tab, nt; int n, sc;
+            // s >= (long)(sc = sizeCtl)到达了要扩充的阈值或者有线程在扩容，因为扩容会把sizeCtl设为负数
             while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
                    (n = tab.length) < MAXIMUM_CAPACITY) {
                 int rs = resizeStamp(n);
@@ -2620,6 +2625,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     if (cellsBusy == 0) {            // Try to attach new Cell
                         CounterCell r = new CounterCell(x); // Optimistic create
                         if (cellsBusy == 0 &&
+                                // 抢到了cellsBusy
                             U.compareAndSwapInt(this, CELLSBUSY, 0, 1)) {
                             boolean created = false;
                             try {               // Recheck under lock
@@ -2627,6 +2633,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 if ((rs = counterCells) != null &&
                                     (m = rs.length) > 0 &&
                                     rs[j = (m - 1) & h] == null) {
+                                    // 数组下标还不存在CounterCell，赋值
                                     rs[j] = r;
                                     created = true;
                                 }
@@ -2642,14 +2649,17 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
                 else if (!wasUncontended)       // CAS already known to fail
                     wasUncontended = true;      // Continue after rehash
+                // 尝试修改所属CounterCell的value
                 else if (U.compareAndSwapLong(a, CELLVALUE, v = a.value, v + x))
                     break;
                 else if (counterCells != as || n >= NCPU)
+                    // cell超出cpu数量或者cells被扩容了,就不需要走下面的尝试扩容了
                     collide = false;            // At max size or stale
                 else if (!collide)
                     collide = true;
                 else if (cellsBusy == 0 &&
                          U.compareAndSwapInt(this, CELLSBUSY, 0, 1)) {
+                    // 走到这里CounterCell的cas也失败了，竞争就比较大了，扩充CounterCell
                     try {
                         if (counterCells == as) {// Expand table unless stale
                             CounterCell[] rs = new CounterCell[n << 1];
@@ -2665,6 +2675,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
                 h = ThreadLocalRandom.advanceProbe(h);
             }
+            // 初始化counterCells
             else if (cellsBusy == 0 && counterCells == as &&
                      U.compareAndSwapInt(this, CELLSBUSY, 0, 1)) {
                 boolean init = false;
@@ -2679,8 +2690,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     cellsBusy = 0;
                 }
                 if (init)
+                    // 如果初始化成功也就代表count已经加入，可以跳出了
                     break;
             }
+            // 有竞争，回退到baseCount试一下，成功就返回
             else if (U.compareAndSwapLong(this, BASECOUNT, v = baseCount, v + x))
                 break;                          // Fall back on using base
         }
@@ -6388,6 +6401,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             int scale = U.arrayIndexScale(ak);
             if ((scale & (scale - 1)) != 0)
                 throw new Error("data type scale not a power of two");
+            // 在编码比如补码当中从左往右数遇到第一个1时有多少个0
             ASHIFT = 31 - Integer.numberOfLeadingZeros(scale);
         } catch (Exception e) {
             throw new Error(e);

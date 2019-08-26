@@ -67,6 +67,7 @@ import java.util.*;
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
  */
+// 利用优先级队列，加上获取第一个元素时阻塞直到时间到达就实现了延迟队列
 public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     implements BlockingQueue<E> {
 
@@ -211,9 +212,11 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
                     available.await();
                 else {
                     long delay = first.getDelay(NANOSECONDS);
+                    // 利用优先级队列，加上获取第一个元素时阻塞直到时间到达就实现了延迟队列
                     if (delay <= 0)
                         return q.poll();
                     first = null; // don't retain ref while waiting
+                    // 设置leader，只需要让一个线程做超时等待，其他队列都不需要，等第一个线程取完之后去通知后续线程就可以了
                     if (leader != null)
                         available.await();
                     else {

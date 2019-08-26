@@ -83,36 +83,26 @@ public class Main {
     }
 
     public static void main(String... args) throws Exception {
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
-        String s = null;
-        SynchronousQueue queue = new SynchronousQueue();
-        Future future = executorService.submit(new Runnable() {
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+        executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
+                System.out.println(new Date());
                 try {
-                    Thread.sleep(1000);
-                    System.out.println("put1 start");
-                    queue.poll(1000,TimeUnit.HOURS);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-        });
-        executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(1500);
-                    System.out.println("put2 start");
-                    queue.poll(1000,TimeUnit.HOURS);
+        }, 0, 1, TimeUnit.SECONDS);
 
-//                    System.out.println("take done");
-//                    Object poll = queue.poll();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        ConcurrentHashMap map = new ConcurrentHashMap(16);
+        for (int i = 0; i < 13; i++) {
+            map.put("test", "test");
+        }
+        for (int i = 0; i < 13; i++) {
+            map.put("test", "test");
+        }
     }
 
     private static ThreadLocal<Integer> pos = new ThreadLocal<Integer>() {
