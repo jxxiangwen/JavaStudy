@@ -2327,8 +2327,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
                    (n = tab.length) < MAXIMUM_CAPACITY) {
                 int rs = resizeStamp(n);
+                // 正在做扩容
                 if (sc < 0) {
+                    // sc >>> RESIZE_STAMP_SHIFT) != rs代表在获取n的时候可能线程切换太久没跑本线程
+                    // 导致本线程拿到的n已经是扩容后的了
+                    // todo sc == rs + 1这是什么意思
                     if ((sc >>> RESIZE_STAMP_SHIFT) != rs || sc == rs + 1 ||
+                            // sc == rs + MAX_RESIZERS达到了最大扩容线程数
+                            // (nt = nextTable) == null和transferIndex <= 0都代表上一轮扩容刚刚结束
                         sc == rs + MAX_RESIZERS || (nt = nextTable) == null ||
                         transferIndex <= 0)
                         break;
@@ -2338,6 +2344,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
                 // 准备扩容
                 else if (U.compareAndSwapInt(this, SIZECTL, sc,
+                                             // +2这个优化代表谁执行-2成功谁就是最后扩容完成的线程，看transfer代码
                                              (rs << RESIZE_STAMP_SHIFT) + 2))
                     transfer(tab, null);
                 s = sumCount();
@@ -2397,13 +2404,15 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     }
                 }
             }
-            // 一直扩容到c <= sizeCtl或者大于最大容量
+            // 没达到扩容阈值或者当前数组大小大于最大容量，都不做扩容
             else if (c <= sc || n >= MAXIMUM_CAPACITY)
                 break;
             else if (tab == table) {
                 int rs = resizeStamp(n);
+                // bug? sc不可能<0，从addCount抄过来的代码？
                 if (sc < 0) {
                     Node<K,V>[] nt;
+
                     if ((sc >>> RESIZE_STAMP_SHIFT) != rs || sc == rs + 1 ||
                         sc == rs + MAX_RESIZERS || (nt = nextTable) == null ||
                         transferIndex <= 0)
@@ -2447,19 +2456,26 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         int nextn = nextTab.length;
         // 并发控制结点，如果结点已经被转移，会设置节点为forwarding
         ForwardingNode<K,V> fwd = new ForwardingNode<K,V>(nextTab);
-        boolean advance = true;// 是否继续向前查找的标志位
+        // 是否继续向前查找的标志位，每次迁移一组数据元素，为true就可以查找下一批迁移元素
+        boolean advance = true;
         boolean finishing = false; // to ensure sweep before committing nextTab
         for (int i = 0, bound = 0;;) {
             Node<K,V> f; int fh;
             // while循环体的作用就是在控制i--，通过i--可以依次遍历原hash表中的节点
             while (advance) {
                 int nextIndex, nextBound;
+                // --i >= bound会在每次迁移一组数组数据的时候成立，如果不成立了，一组数据也就迁移完了
                 if (--i >= bound || finishing)
                     advance = false;
+                // transferIndex看下面一个else if会在最后一组数组数据迁移完成后成立
                 else if ((nextIndex = transferIndex) <= 0) {
+                    // 为了进入这个表达式(i < 0 || i >= n || i + n >= nextn)
                     i = -1;
                     advance = false;
                 }
+                // 每次都迁移stride大小，从下标大的往下标小的做迁移，怎么做到的？
+                // bound要么为0要么为nextIndex - stride
+                // 为0也就是到了数组的最小小标的一组迁移
                 else if (U.compareAndSwapInt
                          (this, TRANSFERINDEX, nextIndex,
                           nextBound = (nextIndex > stride ?
@@ -2480,9 +2496,12 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
                 // 利用CAS方法更新这个扩容阈值，在这里面sizectl值减一，说明一个线程扩容完成
                 if (U.compareAndSwapInt(this, SIZECTL, sc = sizeCtl, sc - 1)) {
+                    // 不成立代表本线程是帮忙扩容的线程，因为帮忙扩容会sc+1，而扩容线程是sc+2
                     if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT)
                         return;
                     finishing = advance = true;
+                    // 会通过--i >= bound 成立之后做一遍检查，看是否所有结点都迁移完了，检查完成后
+                    // finishing判断就会成立，同时i也小于0了，才会进入if (finishing) 结束扩容
                     i = n; // recheck before commit
                 }
             }

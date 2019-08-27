@@ -97,10 +97,10 @@ public class Main {
         }, 0, 1, TimeUnit.SECONDS);
 
         ConcurrentHashMap map = new ConcurrentHashMap(16);
-        for (int i = 0; i < 13; i++) {
+        for (int i = 0; i < 133; i++) {
             map.put("test", "test");
         }
-        for (int i = 0; i < 13; i++) {
+        for (int i = 0; i < 133; i++) {
             map.put("test", "test");
         }
     }
