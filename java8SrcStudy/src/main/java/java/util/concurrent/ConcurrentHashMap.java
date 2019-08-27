@@ -2501,11 +2501,12 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                             // 因为n的值为数组的长度，且是power(2,x)的，所以，在&操作的结果只可能是0或者n
                             // 根据这个规则,0-->放在新表的相同位置,n-->放在新表的（n+原来位置）
                             int runBit = fh & n;
-                            // 以下的部分在完成的工作是构造两个链表，一个是原链表，另一个是原链表的反序排列
+                            // 以下的部分在完成的工作是构造两个链表，一个放在新表的相同位置，另一个放在新表的（n+原来位置）
                             Node<K,V> lastRun = f;
                             for (Node<K,V> p = f.next; p != null; p = p.next) {
                                 int b = p.hash & n;
-                                // 代表结点的反转，如果都为0或者都为n，那么可以一次迁移多个结点
+                                // 代表结点的反转，找到最后一个会导致反转的结点
+                                // 这样从lastRun开始后面可以一次性迁移
                                 if (b != runBit) {
                                     runBit = b;
                                     lastRun = p;
