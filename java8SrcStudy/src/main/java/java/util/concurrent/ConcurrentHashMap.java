@@ -2207,6 +2207,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             outer: for (Node<K,V>[] tab = nextTable;;) {
                 Node<K,V> e; int n;
                 // 未初始化，或者结点为空
+                // nextTable代表扩容已经完成了
                 if (k == null || tab == null || (n = tab.length) == 0 ||
                     (e = tabAt(tab, (n - 1) & h)) == null)
                     return null;
@@ -2225,6 +2226,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                         else
                             return e.find(h, k);
                     }
+                    // 查找链表下一个结点
                     if ((e = e.next) == null)
                         return null;
                 }
@@ -2496,7 +2498,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
                 // 利用CAS方法更新这个扩容阈值，在这里面sizectl值减一，说明一个线程扩容完成
                 if (U.compareAndSwapInt(this, SIZECTL, sc = sizeCtl, sc - 1)) {
-                    // 不成立代表本线程是帮忙扩容的线程，因为帮忙扩容会sc+1，而扩容线程是sc+2
+                    // 不成立代表本线程不是最后执行到这里的线程，还有其他扩容线程没执行完，最后执行完的线程才负责扩容结束
                     if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT)
                         return;
                     finishing = advance = true;
