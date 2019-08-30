@@ -663,7 +663,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                         p.next = newNode(hash, key, value, null);
                         // 减一是因为head不再统计之内，所以到达此值其实已经等于树化阈值了
                         if (binCount >= TREEIFY_THRESHOLD - 1) // -1 for 1st
-                            // 链表数化
+                            // 链表树化
                             treeifyBin(tab, hash);
                         break;
                     }

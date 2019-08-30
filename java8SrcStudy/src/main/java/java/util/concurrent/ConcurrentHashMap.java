@@ -3430,30 +3430,44 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
          */
         final Node<K,V> advance() {
             Node<K,V> e;
+            // 第一次进来不会成功
             if ((e = next) != null)
                 e = e.next;
             for (;;) {
                 Node<K,V>[] t; int i, n;  // must use locals in checks
                 if (e != null)
+                    // 相当于这里在遍历链表，因为e是通过e.next来的，相当于next不为null，可以返回了
                     return next = e;
+                // baseIndex >= baseLimit 数组已经遍历完了
+                // (t = tab) == null代表没有初始化
                 if (baseIndex >= baseLimit || (t = tab) == null ||
+                        // 这一步把index赋给了i，i就在遍历数组
+                        // 这个<= 也代表遍历完成了
                     (n = t.length) <= (i = index) || i < 0)
+                    // 把next赋值为null，并返回，一旦next为null，hasNext就不成立了，就退出了遍历
                     return next = null;
+                // 等于null可能在迁移的时候还有数据没有迁移过来，可以去尝试后面的stack
                 if ((e = tabAt(t, i)) != null && e.hash < 0) {
+                    // e.hash < 0 要么在迁移，要么树化了
                     if (e instanceof ForwardingNode) {
+                        // 在迁移，把数组换成nextTable，因为数组下标所在结点只有被迁移完成了才会换成ForwardingNode
                         tab = ((ForwardingNode<K,V>)e).nextTable;
                         e = null;
+                        // 因为在迁移，把tab换成了在迁移的数组，因此需要把原数组保存下载，防止碰到还没有迁移过来的结点
                         pushState(t, i, n);
                         continue;
                     }
                     else if (e instanceof TreeBin)
+                        // 树化了
                         e = ((TreeBin<K,V>)e).first;
                     else
                         e = null;
                 }
                 if (stack != null)
+                    // 访问原未迁移数组
                     recoverState(n);
                 else if ((index = i + baseSize) >= n)
+                    // 访问下一下标
                     index = ++baseIndex; // visit upper slots if present
             }
         }
@@ -3476,7 +3490,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         /**
          * Possibly pops traversal state.
-         *
+         * 还原原访问
          * @param n length of current table
          */
         private void recoverState(int n) {
@@ -3526,6 +3540,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         implements Iterator<K>, Enumeration<K> {
         KeyIterator(Node<K,V>[] tab, int index, int size, int limit,
                     ConcurrentHashMap<K,V> map) {
+            // super的变量顺序其实是size, index, limit，这里变量名称写错了？
             super(tab, index, size, limit, map);
         }
 
@@ -3553,6 +3568,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Node<K,V> p;
             if ((p = next) == null)
                 throw new NoSuchElementException();
+            // 和key的遍历惟一不同的也就是这里，一个取key一个取value
             V v = p.val;
             lastReturned = p;
             advance();
@@ -3573,6 +3589,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Node<K,V> p;
             if ((p = next) == null)
                 throw new NoSuchElementException();
+            // 和key和value的遍历不同就在这里，取key和value构造Entry
             K k = p.key;
             V v = p.val;
             lastReturned = p;

@@ -227,6 +227,9 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     private void ensureCapacityInternal(int minCapacity) {
+        // 使用默认构造函数初始化这个成立，一旦添加元素就会扩容为DEFAULT_CAPACITY大小
+        // 而使用new ArrayList(0)构造，虽然初始化数组大小都为0，但是由于走不到这个if，
+        // 导致开始添加时经常要扩容
         if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
             minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
         }
@@ -719,6 +722,7 @@ public class ArrayList<E> extends AbstractList<E>
      *                              or if the specified collection is null
      * @see Collection#contains(Object)
      */
+    // 留下c集合含有的元素，不含有的都删除
     public boolean retainAll(Collection<?> c) {
         Objects.requireNonNull(c);
         return batchRemove(c, true);
@@ -875,12 +879,15 @@ public class ArrayList<E> extends AbstractList<E>
         }
 
         public void remove() {
+            // 还没有调用过next
             if (lastRet < 0)
                 throw new IllegalStateException();
             checkForComodification();
 
             try {
+                // 删除刚刚访问的元素
                 ArrayList.this.remove(lastRet);
+                // cursor代表下一个访问的元素
                 cursor = lastRet;
                 lastRet = -1;
                 expectedModCount = modCount;

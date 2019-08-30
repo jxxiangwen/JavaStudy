@@ -123,11 +123,14 @@ public class LinkedList<E>
      */
     private void linkFirst(E e) {
         final Node<E> f = first;
+        // 设置first为下一节点
         final Node<E> newNode = new Node<>(null, e, f);
+        // first变成当前结点
         first = newNode;
         // 原队列为空
         if (f == null)
             last = newNode;
+        // 不为空，原first指向新first
         else
             f.prev = newNode;
         size++;
@@ -139,11 +142,14 @@ public class LinkedList<E>
      */
     void linkLast(E e) {
         final Node<E> l = last;
+        // 设置last为前一节点
         final Node<E> newNode = new Node<>(l, e, null);
+        // last变成当前结点
         last = newNode;
         // 原队列为空
         if (l == null)
             first = newNode;
+        // 不为空，原last指向新last
         else
             l.next = newNode;
         size++;
@@ -155,13 +161,17 @@ public class LinkedList<E>
      */
     void linkBefore(E e, Node<E> succ) {
         // assert succ != null;
+        // 获取插入位置的前继结点
         final Node<E> pred = succ.prev;
+        // 设置新节点前继和后继
         final Node<E> newNode = new Node<>(pred, e, succ);
+        // 后继结点前继指向当前结点
         succ.prev = newNode;
         // succ 是原来的first
         if (pred == null)
             first = newNode;
         else
+            // 前继不为空，前继结点的后继指向当前结点
             pred.next = newNode;
         size++;
         modCount++;
@@ -170,7 +180,7 @@ public class LinkedList<E>
     /**
      * Unlinks non-null first node f.
      */
-    // 将f的next设为first
+    // 删除当前first结点，将f的next设为first
     private E unlinkFirst(Node<E> f) {
         // assert f == first && f != null;
         final E element = f.item;
@@ -190,7 +200,7 @@ public class LinkedList<E>
     /**
      * Unlinks non-null last node l.
      */
-    // l的prev设为last
+    // 删除当前last结点，l的prev设为last
     private E unlinkLast(Node<E> l) {
         // assert l == last && l != null;
         final E element = l.item;
@@ -512,6 +522,7 @@ public class LinkedList<E>
         checkPositionIndex(index);
 
         if (index == size)
+            // 在最后添加
             linkLast(element);
         else
             linkBefore(element, node(index));

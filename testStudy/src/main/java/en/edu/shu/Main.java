@@ -96,12 +96,9 @@ public class Main {
             }
         }, 0, 1, TimeUnit.SECONDS);
 
-        ConcurrentHashMap map = new ConcurrentHashMap(16);
-        for (int i = 0; i < 133; i++) {
-            map.put("test", "test");
-        }
-        for (int i = 0; i < 133; i++) {
-            map.put("test", "test");
+        List<String> list = new LinkedList<>();
+        for(int i = 0; i < 16; i++){
+            list.add(null);
         }
     }
 
