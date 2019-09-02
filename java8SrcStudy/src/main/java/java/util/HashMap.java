@@ -503,6 +503,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Implements Map.putAll and Map constructor
      *
+     * evict除初始化为false之外，其余都为true，这个值会在插入的最后调用afterNodeInsertion时传入
+     * 这样可以做一个缓存Map，比如维持一个长度为恒定的缓存，每插入一个新值就移除一个最老的值
      * @param m the map
      * @param evict false when initially constructing this map, else
      * true (relayed to method afterNodeInsertion).
@@ -738,9 +740,11 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         @SuppressWarnings({"rawtypes","unchecked"})
             Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
         table = newTab;
+        // 老数组存在，就需要迁移
         if (oldTab != null) {
             for (int j = 0; j < oldCap; ++j) {
                 Node<K,V> e;
+                // 数组下标不为空则存在元素
                 if ((e = oldTab[j]) != null) {
                     oldTab[j] = null;
                     if (e.next == null)
@@ -754,6 +758,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                         Node<K,V> next;
                         do {
                             next = e.next;
+                            // cap为2的幂，每次扩容为两倍，
+                            // 所以如果和原数组大小&为0代表新数组用来检测之后在数组下标位置不变
                             if ((e.hash & oldCap) == 0) {
                                 // 还放在原来位置
                                 if (loTail == null)

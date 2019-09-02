@@ -64,6 +64,7 @@ class Stack<E> extends Vector<E> {
      * @see     java.util.Vector#addElement
      */
     public E push(E item) {
+        // 将元素插入Vector数组的最后
         addElement(item);
 
         return item;
@@ -80,8 +81,9 @@ class Stack<E> extends Vector<E> {
     public synchronized E pop() {
         E       obj;
         int     len = size();
-
+        // 获取数组最后一个元素
         obj = peek();
+        // 删除数组最后一个元素
         removeElementAt(len - 1);
 
         return obj;
@@ -100,6 +102,7 @@ class Stack<E> extends Vector<E> {
 
         if (len == 0)
             throw new EmptyStackException();
+        // 获取数组最后一个元素
         return elementAt(len - 1);
     }
 

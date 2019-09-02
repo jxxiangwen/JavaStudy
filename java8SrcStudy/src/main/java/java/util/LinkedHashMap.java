@@ -211,7 +211,7 @@ public class LinkedHashMap<K,V>
     /**
      * The iteration ordering method for this linked hash map: <tt>true</tt>
      * for access-order, <tt>false</tt> for insertion-order.
-     *
+     * 默认按照插入循序，为true时为访问顺序，即访问后，结点插入到尾结点
      * @serial
      */
     final boolean accessOrder;
@@ -219,6 +219,7 @@ public class LinkedHashMap<K,V>
     // internal utilities
 
     // link at the end of list
+    // 把p结点插入末尾
     private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
         LinkedHashMap.Entry<K,V> last = tail;
         tail = p;
@@ -231,6 +232,7 @@ public class LinkedHashMap<K,V>
     }
 
     // apply src's links to dst
+    // 将src前后指向和dst前后指向换一下，dst就到了src的位置
     private void transferLinks(LinkedHashMap.Entry<K,V> src,
                                LinkedHashMap.Entry<K,V> dst) {
         LinkedHashMap.Entry<K,V> b = dst.before = src.before;
@@ -294,14 +296,20 @@ public class LinkedHashMap<K,V>
             a.before = b;
     }
 
+    /**
+     * 可以做一个缓存Map，比如维持一个长度为恒定的缓存，每插入一个新值就移除一个最老的值
+     * @param evict
+     */
     void afterNodeInsertion(boolean evict) { // possibly remove eldest
         LinkedHashMap.Entry<K,V> first;
         if (evict && (first = head) != null && removeEldestEntry(first)) {
+            // first由于是第一个插入的，也就是最老的值
             K key = first.key;
             removeNode(hash(key), key, null, false, true);
         }
     }
 
+    // 如果构造的LinkedHashMap是按照访问顺序的，那么访问之后就需要将结点移到最后
     void afterNodeAccess(Node<K,V> e) { // move node to last
         LinkedHashMap.Entry<K,V> last;
         if (accessOrder && (last = tail) != e) {
@@ -309,16 +317,22 @@ public class LinkedHashMap<K,V>
                 (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
             p.after = null;
             if (b == null)
+                // e是头结点，把头结点变为e的后继结点
                 head = a;
             else
+                // e前继节点的after指向e的后继结点
                 b.after = a;
             if (a != null)
+                // 后继结点存在
+                // e的后继结点的before指向e的前继节点
                 a.before = b;
             else
+                // 后继结点不存在
                 last = b;
             if (last == null)
                 head = p;
             else {
+                // e设置到最后
                 p.before = last;
                 last.after = p;
             }
@@ -412,6 +426,7 @@ public class LinkedHashMap<K,V>
      *         specified value
      */
     public boolean containsValue(Object value) {
+        // 访问值，必须要遍历所有结点，链表包含所有结点，可以直接访问
         for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
             V v = e.value;
             if (v == value || (value != null && value.equals(v)))
@@ -437,8 +452,10 @@ public class LinkedHashMap<K,V>
      */
     public V get(Object key) {
         Node<K,V> e;
+        // 访问HashMap的get
         if ((e = getNode(hash(key), key)) == null)
             return null;
+        // 如果是按照访问顺序的，就需要将访问过的结点放入最后
         if (accessOrder)
             afterNodeAccess(e);
         return e.value;
@@ -536,6 +553,7 @@ public class LinkedHashMap<K,V>
         return ks;
     }
 
+    // 都是通过链表来遍历
     final class LinkedKeySet extends AbstractSet<K> {
         public final int size()                 { return size; }
         public final void clear()               { LinkedHashMap.this.clear(); }
@@ -704,6 +722,7 @@ public class LinkedHashMap<K,V>
         int expectedModCount;
 
         LinkedHashIterator() {
+            // 通过LinkedHashMap的链表来遍历所有结点，所以是有顺序的，要么插入顺序，要么访问顺序
             next = head;
             expectedModCount = modCount;
             current = null;
@@ -720,6 +739,7 @@ public class LinkedHashMap<K,V>
             if (e == null)
                 throw new NoSuchElementException();
             current = e;
+            // 链表的下一个值
             next = e.after;
             return e;
         }

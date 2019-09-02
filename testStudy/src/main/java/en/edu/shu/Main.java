@@ -96,6 +96,22 @@ public class Main {
             }
         }, 0, 1, TimeUnit.SECONDS);
 
+        BitSet bitSet = new BitSet(21);
+        bitSet.set(20);
+        Map<String,String> map = new LinkedHashMap(1);
+        map.put("test","test");
+        map.put("test","test");
+        for(Map.Entry<String,String> entry : map.entrySet()){
+            System.out.println("link" + entry.getKey());
+        }
+        map = new HashMap(2);
+        map.put("test","test");
+        map.put("test","test");
+        for(Map.Entry<String,String> entry : map.entrySet()){
+            System.out.println("hash" + entry.getKey());
+        }
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        countDownLatch.await();
         List<String> list = new LinkedList<>();
         for(int i = 0; i < 16; i++){
             list.add(null);

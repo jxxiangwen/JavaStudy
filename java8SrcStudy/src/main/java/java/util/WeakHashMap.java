@@ -313,22 +313,28 @@ public class WeakHashMap<K,V>
 
     /**
      * Expunges stale entries from the table.
+     * 删除已经没有引用的结点
      */
     private void expungeStaleEntries() {
+        // 如果引用队列不为空，代表已经有结点不存在引用，不停poll，直到全部删除
         for (Object x; (x = queue.poll()) != null; ) {
             synchronized (queue) {
                 @SuppressWarnings("unchecked")
                     Entry<K,V> e = (Entry<K,V>) x;
+                // 查找结点所在数组下标
                 int i = indexFor(e.hash, table.length);
 
                 Entry<K,V> prev = table[i];
                 Entry<K,V> p = prev;
                 while (p != null) {
                     Entry<K,V> next = p.next;
+                    // 查找到结点
                     if (p == e) {
+                        // p在数组下标位置，将next设置到数组下标位置
                         if (prev == e)
                             table[i] = next;
                         else
+                            // 不在下标位置，前继结点指向next结点，删除e
                             prev.next = next;
                         // Must not null out e.next;
                         // stale entries may be in use by a HashIterator
@@ -336,6 +342,7 @@ public class WeakHashMap<K,V>
                         size--;
                         break;
                     }
+                    // 继续向后查找
                     prev = p;
                     p = next;
                 }
@@ -427,6 +434,7 @@ public class WeakHashMap<K,V>
         Entry<K,V>[] tab = getTable();
         int index = indexFor(h, tab.length);
         Entry<K,V> e = tab[index];
+        // 遍历链表
         while (e != null && !(e.hash == h && eq(k, e.get())))
             e = e.next;
         return e;
@@ -450,6 +458,7 @@ public class WeakHashMap<K,V>
         Entry<K,V>[] tab = getTable();
         int i = indexFor(h, tab.length);
 
+        // 遍历数组的链表，如果存在key相同结点，则替换后返回旧值
         for (Entry<K,V> e = tab[i]; e != null; e = e.next) {
             if (h == e.hash && eq(k, e.get())) {
                 V oldValue = e.value;
@@ -461,6 +470,7 @@ public class WeakHashMap<K,V>
 
         modCount++;
         Entry<K,V> e = tab[i];
+        // 把key放在数组下标位置，原数组下标变为next结点
         tab[i] = new Entry<>(k, value, queue, h, e);
         if (++size >= threshold)
             resize(tab.length * 2);

@@ -107,6 +107,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
     /**
      * Given a bit index, return word index containing it.
+     * 计算bit位在word数组中的数组下标，由于word是long型，64位，因此每64位数组下标才增加1
+     * ADDRESS_BITS_PER_WORD == 6，正好2的6次方为64
      */
     private static int wordIndex(int bitIndex) {
         return bitIndex >> ADDRESS_BITS_PER_WORD;
