@@ -400,7 +400,7 @@
 
     <properties>
         <org.springframework.version>4.0.5.RELEASE</org.springframework.version>
-        <junit.version>4.11</junit.version>
+        <junit.version>4.13.1</junit.version>
         <com.lordofthejars.version>0.7.9</com.lordofthejars.version>
         <org.jboss.netty.version>3.2.10.Final</org.jboss.netty.version>
         <org.spring.security.version>3.2.5.RELEASE</org.spring.security.version>
